@@ -122,6 +122,8 @@ export function useCreateCard() {
           isHot: input.isHot ?? false,
           hotNote: input.hotNote ?? null,
           researchNotes: null,
+          liveStats: null,
+          liveStatsFetchedAt: null,
           dateAdded: now,
           dateSold: null,
           soldPrice: null,

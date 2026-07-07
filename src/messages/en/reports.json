@@ -1,0 +1,21 @@
+{
+  "title": "Sales Reports",
+  "from": "From",
+  "to": "To",
+  "category": "Category",
+  "endOfDay": "Today (End of Day)",
+  "downloadPdf": "Download PDF",
+  "exportCsv": "Export CSV",
+  "totalRevenue": "Total Revenue",
+  "totalProfit": "Total Profit",
+  "itemsSold": "Items Sold",
+  "breakdownByCategory": "Breakdown by Category",
+  "itemizedSales": "Itemized Sales",
+  "noSalesInRange": "No sales in this range.",
+  "colDate": "Date",
+  "colCard": "Card",
+  "colPrice": "Price",
+  "colProfit": "Profit",
+  "colPayment": "Payment",
+  "colBuyerNote": "Buyer Note"
+}

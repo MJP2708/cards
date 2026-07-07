@@ -1,0 +1,21 @@
+{
+  "title": "รายงานการขาย",
+  "from": "จาก",
+  "to": "ถึง",
+  "category": "หมวดหมู่",
+  "endOfDay": "วันนี้ (สรุปท้ายวัน)",
+  "downloadPdf": "ดาวน์โหลด PDF",
+  "exportCsv": "ส่งออก CSV",
+  "totalRevenue": "รายได้รวม",
+  "totalProfit": "กำไรรวม",
+  "itemsSold": "จำนวนที่ขาย",
+  "breakdownByCategory": "แยกตามหมวดหมู่",
+  "itemizedSales": "รายการขายแบบละเอียด",
+  "noSalesInRange": "ไม่มีการขายในช่วงเวลานี้",
+  "colDate": "วันที่",
+  "colCard": "การ์ด",
+  "colPrice": "ราคา",
+  "colProfit": "กำไร",
+  "colPayment": "การชำระเงิน",
+  "colBuyerNote": "หมายเหตุผู้ซื้อ"
+}

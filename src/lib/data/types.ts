@@ -20,6 +20,8 @@ export type CardDTO = {
   isHot: boolean;
   hotNote: string | null;
   researchNotes: string | null;
+  liveStats: import("@/lib/liveStats").LiveStatsSnapshot | null;
+  liveStatsFetchedAt: string | null;
   dateAdded: string;
   dateSold: string | null;
   soldPrice: number | null;

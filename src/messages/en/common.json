@@ -1,0 +1,21 @@
+{
+  "appName": "Booth Cards",
+  "addCard": "Add Card",
+  "markSold": "Mark Sold",
+  "save": "Save",
+  "saveChanges": "Save Changes",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "confirm": "Confirm",
+  "undo": "Undo",
+  "loading": "Loading…",
+  "search": "Search all categories…",
+  "allCategories": "All Categories",
+  "inStock": "In Stock",
+  "reserved": "Reserved",
+  "onHold": "On Hold",
+  "sold": "Sold",
+  "darkMode": "Dark mode",
+  "lightMode": "Light mode",
+  "boothMode": "Booth mode"
+}

@@ -4,6 +4,8 @@ export type DashboardStats = {
   totalInventoryValue: number;
   inStockCount: number;
   soldCount: number;
+  todayRevenue: number;
+  todayItemsSold: number;
   topSelling: { name: string; revenue: number; itemCount: number }[];
   cardTypePerformance: { cardType: string; profit: number; itemCount: number }[];
   profitOverTime: { date: string; cumulativeProfit: number }[];
@@ -18,6 +20,9 @@ export async function buildDashboardStats(): Promise<DashboardStats> {
   ]);
 
   const totalInventoryValue = inStockCards.reduce((sum, c) => sum + c.askingPrice * c.quantity, 0);
+  const todayKey = new Date().toISOString().slice(0, 10);
+  const todaySales = sales.filter((s) => s.timestamp.toISOString().slice(0, 10) === todayKey);
+  const todayRevenue = todaySales.reduce((sum, s) => sum + s.soldPrice, 0);
 
   const byName = new Map<string, { revenue: number; itemCount: number }>();
   const byCardType = new Map<string, { profit: number; itemCount: number }>();
@@ -54,6 +59,8 @@ export async function buildDashboardStats(): Promise<DashboardStats> {
     totalInventoryValue,
     inStockCount: inStockCards.length,
     soldCount,
+    todayRevenue,
+    todayItemsSold: todaySales.length,
     topSelling: Array.from(byName.entries())
       .map(([name, v]) => ({ name, ...v }))
       .sort((a, b) => b.revenue - a.revenue)

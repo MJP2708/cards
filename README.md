@@ -1,8 +1,8 @@
 # Booth Cards — Convention Inventory & Sales Tracker
 
-A booth-ready inventory, research, and sales tracker for trading card sellers, with
-distinct sections for NBA, Football, Pokémon, and Other TCG (extensible to any
-new category), category-based theming, offline resilience, sales reporting
+A booth-ready inventory, research, and sales tracker for sports card sellers, with
+distinct sections for NBA and Football (soccer) — extensible to any new category
+via Settings — category-based theming, offline resilience, sales reporting
 (PDF/CSV), and a live analytics dashboard.
 
 ## Tech stack
@@ -38,6 +38,14 @@ new category), category-based theming, offline resilience, sales reporting
 
    Never commit `.env` — it's already gitignored.
 
+   Optionally, for live player stats on the Fact Sheet panel (Settings → not
+   required, everything else works without these):
+
+   ```bash
+   BALLDONTLIE_API_KEY='...'   # NBA season averages — https://www.balldontlie.io
+   API_FOOTBALL_KEY='...'      # Football/soccer season stats — https://www.api-football.com (free tier: 100 req/day)
+   ```
+
 4. **Run the migration and seed data:**
 
    ```bash
@@ -45,9 +53,8 @@ new category), category-based theming, offline resilience, sales reporting
    npx prisma db seed
    ```
 
-   This creates the four built-in categories (NBA, Football, Pokémon, Other TCG)
-   and seeds a handful of sample cards in each, so you have data to explore
-   immediately.
+   This creates the two built-in categories (NBA, Football) and seeds a
+   handful of sample cards in each, so you have data to explore immediately.
 
 5. **Start the dev server:**
 
@@ -78,15 +85,17 @@ new category), category-based theming, offline resilience, sales reporting
 
 ## Feature notes & known simplifications
 
-- **Card research / Fact Sheet panel** ships in **manual/cached mode only** —
-  there's no live eBay/NBA-stats/TCGplayer API wired up yet. Add comps by
-  pasting in a price + source + optional link on the card's detail page; the
-  "why priced high" explainer and price-history sparkline are derived from
-  whatever comps/card data you've entered, not a live feed. Wiring in real APIs
-  (balldontlie/NBA stats for sports, TCGplayer API for Pokémon/TCG, eBay's
-  Browse API for comps — never scrape eBay directly, it violates their ToS) is
-  a natural follow-up once you have API keys; the `PriceComp` model and Fact
-  Sheet UI already have a `source` field ready for a `"live"` provenance value.
+- **Card research / Fact Sheet panel**: live season-stat lookups (season
+  averages for NBA via balldontlie, appearances/goals/assists/rating for
+  Football via API-Football) are wired up behind a "Refresh Stats" button —
+  results are cached on the card (`Card.liveStats`/`liveStatsFetchedAt`) and
+  only re-fetched at most once an hour, since the free API tiers have tight
+  daily request limits (API-Football: 100/day). **Price comps remain
+  manual/cached only** — there's no live eBay pricing API wired up. Add comps
+  by pasting in a price + source + optional link; the "why priced high"
+  explainer and price-history sparkline are derived from whatever comps
+  you've entered, not a live feed (never scrape eBay directly — it violates
+  their ToS; their paid Browse API is the sanctioned path if you want this later).
 - **Offline support** covers the three actions most likely to matter mid-sale
   at a booth: **browsing/searching inventory, adding a card, and marking a card
   sold**. These read/write through a Dexie (IndexedDB) mirror and a mutation
@@ -112,7 +121,45 @@ new category), category-based theming, offline resilience, sales reporting
   fallback.
 - **Custom categories**: Settings → "Add a Custom Category" lets you define a
   new category's extra fields and theme colors without touching code — it
-  shows up in the category switcher and inventory forms immediately.
+  shows up in the category switcher and inventory forms immediately. This is
+  also how you'd bring back a TCG/Pokémon-style section (or add any other
+  card type) later without a code change.
+
+## Changelog: UX/UI overhaul
+
+A design and usability pass on top of the working v1 app — no core feature changes, all additive:
+
+- **Visual identity**: a real type scale, a distinct display font per category
+  (Oswald/NBA, Barlow Condensed/Football, plus Baloo 2/Cinzel available for
+  custom categories) layered over one consistent Geist Sans body face, upgraded
+  category textures (hardwood stripe, pitch stripe, holo sheen, ornate frame),
+  and small hand-drawn category icons — all swappable per category via
+  `Category.themeTokens` (now including `headerFont`/`iconSet`), exposed as
+  dropdowns in Settings rather than raw JSON.
+- **Scope**: narrowed to sports cards only (NBA + Football/soccer) — Pokémon
+  and Other TCG were removed as built-in categories; add them back anytime via
+  Settings → Add a Custom Category if needed.
+- **Live stats**: NBA (balldontlie) and Football (API-Football) season-stat
+  lookups on the Fact Sheet, cached hourly given free-tier rate limits.
+- **Usability**: a unified filter chip bar (replacing separate status/sort/
+  price dropdowns), empty states and loading skeletons throughout, a regrouped
+  Add Card form (Identity → Pricing & Status → Photos & Notes) with real photo
+  fields, undo toasts on delete/mark-sold (replacing confirm() dialogs), inline
+  help tooltips, a 4-step skippable onboarding tour, and a Cmd/Ctrl+K command
+  palette for jumping to any card/category/page.
+- **Motion**: category-switch crossfade, a Mark Sold checkmark celebration, all
+  routed through one `MotionConfig` wrapper that respects `prefers-reduced-motion`
+  plus an explicit Settings override.
+- **PDF reports**: a branded header band (category accent color), alternating
+  row shading, cleaner spacing.
+- **Language switcher**: English/Thai via a `NEXT_LOCALE` cookie (no URL
+  routing change), persisted per device. Translated so far: navigation, common
+  actions, Dashboard, Reports, and Settings chrome. Card/player/team/set data
+  is never translated. Deeper dialogs (Fact Sheet, CSV import, onboarding copy)
+  are still English-only — the message-file structure
+  (`src/messages/{en,th}/*.json` by feature area) makes extending this
+  straightforward. Grading/condition jargon (e.g. "PSA 10", card
+  types/rarities) is intentionally left as free-text data, not translated.
 
 ## Project structure
 

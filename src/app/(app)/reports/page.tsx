@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
 import { useSalesReport, reportDownloadUrl } from "@/lib/data/reports";
 
@@ -9,6 +10,8 @@ function todayISO() {
 }
 
 export default function ReportsPage() {
+  const t = useTranslations("reports");
+  const common = useTranslations("common");
   const { data: categories } = useCategories();
   const [from, setFrom] = useState(todayISO());
   const [to, setTo] = useState(todayISO());
@@ -19,21 +22,21 @@ export default function ReportsPage() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      <h1 className="text-xl font-semibold">Sales Reports</h1>
+      <h1 className="text-xl font-semibold">{t("title")}</h1>
 
       <div className="flex flex-wrap items-end gap-3 text-sm">
         <label className="flex flex-col gap-1">
-          From
+          {t("from")}
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="rounded-md border border-border-1 px-2 py-1.5" />
         </label>
         <label className="flex flex-col gap-1">
-          To
+          {t("to")}
           <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="rounded-md border border-border-1 px-2 py-1.5" />
         </label>
         <label className="flex flex-col gap-1">
-          Category
+          {t("category")}
           <select value={category} onChange={(e) => setCategory(e.target.value)} className="rounded-md border border-border-1 px-2 py-1.5">
-            <option value="all">All categories</option>
+            <option value="all">{common("allCategories")}</option>
             {categories?.map((c) => (
               <option key={c.key} value={c.key}>
                 {c.displayName}
@@ -48,43 +51,43 @@ export default function ReportsPage() {
           }}
           className="booth-target rounded-md border border-border-1 px-3 py-2 hover:bg-surface-1"
         >
-          Today (End of Day)
+          {t("endOfDay")}
         </button>
         <a
           href={reportDownloadUrl("pdf", filters, "Sales Report")}
           className="booth-target rounded-md bg-accent px-4 py-2 font-medium text-white hover:bg-accent-dark"
         >
-          Download PDF
+          {t("downloadPdf")}
         </a>
         <a
           href={reportDownloadUrl("csv", filters)}
           className="booth-target rounded-md border border-border-1 px-4 py-2 hover:bg-surface-1"
         >
-          Export CSV
+          {t("exportCsv")}
         </a>
       </div>
 
-      {isLoading && <p className="text-sm text-foreground/60">Loading…</p>}
+      {isLoading && <p className="text-sm text-foreground/60">{common("loading")}</p>}
 
       {report && (
         <>
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-lg border border-border-1 p-4">
-              <p className="text-xs text-foreground/50">Total Revenue</p>
+              <p className="text-xs text-foreground/50">{t("totalRevenue")}</p>
               <p className="text-2xl font-semibold">฿{report.totals.revenue.toLocaleString()}</p>
             </div>
             <div className="rounded-lg border border-border-1 p-4">
-              <p className="text-xs text-foreground/50">Total Profit</p>
+              <p className="text-xs text-foreground/50">{t("totalProfit")}</p>
               <p className="text-2xl font-semibold">฿{report.totals.profit.toLocaleString()}</p>
             </div>
             <div className="rounded-lg border border-border-1 p-4">
-              <p className="text-xs text-foreground/50">Items Sold</p>
+              <p className="text-xs text-foreground/50">{t("itemsSold")}</p>
               <p className="text-2xl font-semibold">{report.totals.itemCount}</p>
             </div>
           </div>
 
           <div>
-            <h2 className="mb-2 text-sm font-semibold text-foreground/70">Breakdown by Category</h2>
+            <h2 className="mb-2 text-sm font-semibold text-foreground/70">{t("breakdownByCategory")}</h2>
             <div className="space-y-3">
               {report.byCategory.map((cat) => (
                 <div key={cat.category} className="rounded-lg border border-border-1 p-3 text-sm">
@@ -108,23 +111,23 @@ export default function ReportsPage() {
                   </ul>
                 </div>
               ))}
-              {report.byCategory.length === 0 && <p className="text-sm text-foreground/50">No sales in this range.</p>}
+              {report.byCategory.length === 0 && <p className="text-sm text-foreground/50">{t("noSalesInRange")}</p>}
             </div>
           </div>
 
           <div>
-            <h2 className="mb-2 text-sm font-semibold text-foreground/70">Itemized Sales</h2>
+            <h2 className="mb-2 text-sm font-semibold text-foreground/70">{t("itemizedSales")}</h2>
             <div className="overflow-x-auto rounded-lg border border-border-1">
               <table className="w-full text-sm">
                 <thead className="bg-surface-1 text-left text-xs uppercase text-foreground/60">
                   <tr>
-                    <th className="px-3 py-2">Date</th>
-                    <th className="px-3 py-2">Category</th>
-                    <th className="px-3 py-2">Card</th>
-                    <th className="px-3 py-2">Price</th>
-                    <th className="px-3 py-2">Profit</th>
-                    <th className="px-3 py-2">Payment</th>
-                    <th className="px-3 py-2">Buyer Note</th>
+                    <th className="px-3 py-2">{t("colDate")}</th>
+                    <th className="px-3 py-2">{t("category")}</th>
+                    <th className="px-3 py-2">{t("colCard")}</th>
+                    <th className="px-3 py-2">{t("colPrice")}</th>
+                    <th className="px-3 py-2">{t("colProfit")}</th>
+                    <th className="px-3 py-2">{t("colPayment")}</th>
+                    <th className="px-3 py-2">{t("colBuyerNote")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -142,7 +145,7 @@ export default function ReportsPage() {
                   {report.lines.length === 0 && (
                     <tr>
                       <td colSpan={7} className="px-3 py-6 text-center text-foreground/50">
-                        No sales in this range.
+                        {t("noSalesInRange")}
                       </td>
                     </tr>
                   )}

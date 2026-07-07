@@ -1,0 +1,12 @@
+{
+  "title": "Dashboard",
+  "todayRevenue": "Today's Revenue",
+  "itemsSoldToday": "Items Sold Today",
+  "inStockValue": "In-Stock Inventory Value",
+  "totalSold": "Total Sold",
+  "revenueByCategory": "Revenue by Category",
+  "profitByCategory": "Profit by Category",
+  "topSelling": "Top Selling Cards",
+  "cardTypePerformance": "Card Type Performance (Profit)",
+  "cumulativeProfit": "Cumulative Profit Over the Event"
+}

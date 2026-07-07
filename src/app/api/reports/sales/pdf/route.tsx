@@ -1,6 +1,7 @@
 import { renderToBuffer } from "@react-pdf/renderer";
 import { buildSalesReport } from "@/lib/reports/salesReport";
 import { SalesReportPdf } from "@/lib/reports/SalesReportPdf";
+import { getCategoryByKey } from "@/lib/categories";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -15,7 +16,10 @@ export async function GET(request: Request) {
     category: category ?? undefined,
   });
 
-  const buffer = await renderToBuffer(<SalesReportPdf report={report} title={title} />);
+  const categoryRow = category && category !== "all" ? await getCategoryByKey(category) : null;
+  const accentColor = categoryRow?.themeTokens.accent;
+
+  const buffer = await renderToBuffer(<SalesReportPdf report={report} title={title} accentColor={accentColor} />);
 
   return new Response(new Uint8Array(buffer), {
     headers: {

@@ -2,15 +2,106 @@
 
 import { useState } from "react";
 import { formatDistanceToNow } from "date-fns";
+import {
+  Activity,
+  Sparkles,
+  LineChart as LineChartIcon,
+  Receipt,
+  Scale,
+  Flame,
+  BookOpen,
+  RefreshCw,
+} from "lucide-react";
 import type { CardDetailDTO } from "@/lib/data/types";
 import type { CategoryDTO } from "@/lib/categories";
 import { useUpdateCard } from "@/lib/data/cards";
 import { useCreateComp, useDeleteComp } from "@/lib/data/comps";
 import { useSettings } from "@/lib/data/settings";
+import { useRefreshStats } from "@/lib/data/liveStats";
 import { COMP_SOURCES } from "@/lib/validation/priceComp";
 import { explainPrice } from "@/lib/priceExplainer";
 import { PriceSparkline } from "@/components/cards/PriceSparkline";
 import { UsdHint } from "@/components/UsdHint";
+import { HelpTooltip } from "@/components/ui/Tooltip";
+
+const LIVE_STATS_CATEGORIES = new Set(["NBA", "Football"]);
+
+function Section({
+  icon: Icon,
+  title,
+  help,
+  children,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  help?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="space-y-2 rounded-lg border border-border-1 p-3">
+      <h3 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide" style={{ color: "var(--accent-dark)" }}>
+        <Icon className="h-3.5 w-3.5" />
+        {title}
+        {help && <HelpTooltip text={help} />}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function LiveStatsSection({ card }: { card: CardDetailDTO }) {
+  const refreshStats = useRefreshStats(card.id);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!LIVE_STATS_CATEGORIES.has(card.category)) return null;
+
+  async function handleRefresh() {
+    setError(null);
+    try {
+      await refreshStats.mutateAsync(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to refresh stats");
+    }
+  }
+
+  return (
+    <Section
+      icon={Activity}
+      title="Live Stats"
+      help="Pulls season stats from balldontlie (NBA) or API-Football (soccer). Cached for an hour between refreshes since the free API tiers have tight daily limits."
+    >
+      {card.liveStats ? (
+        <>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {card.liveStats.summary.map((s) => (
+              <div key={s.label} className="rounded-md bg-surface-1 px-2 py-1.5 text-center">
+                <p className="text-[0.65rem] uppercase text-foreground/50">{s.label}</p>
+                <p className="text-sm font-semibold">{s.value}</p>
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-foreground/50">
+            {card.liveStats.season} season · {card.liveStats.team ?? "—"}
+            {card.liveStatsFetchedAt && (
+              <> · updated {formatDistanceToNow(new Date(card.liveStatsFetchedAt), { addSuffix: true })}</>
+            )}
+          </p>
+        </>
+      ) : (
+        <p className="text-xs text-foreground/50">No live stats fetched yet.</p>
+      )}
+      {error && <p className="text-xs text-red-600">{error}</p>}
+      <button
+        onClick={handleRefresh}
+        disabled={refreshStats.isPending}
+        className="flex items-center gap-1.5 rounded-md border border-border-1 px-2 py-1 text-xs hover:bg-surface-1 disabled:opacity-50"
+      >
+        <RefreshCw className={`h-3 w-3 ${refreshStats.isPending ? "animate-spin" : ""}`} />
+        {refreshStats.isPending ? "Refreshing…" : "Refresh Stats"}
+      </button>
+    </Section>
+  );
+}
 
 export function FactSheetPanel({ card, category }: { card: CardDetailDTO; category: CategoryDTO }) {
   const updateCard = useUpdateCard();
@@ -29,35 +120,34 @@ export function FactSheetPanel({ card, category }: { card: CardDetailDTO; catego
   const reasons = explainPrice(card);
 
   return (
-    <aside className="motif-surface space-y-5 rounded-lg border border-border-1 p-4">
-      <div>
-        <h2 className="mb-1 text-sm font-semibold text-foreground/70">Fact Sheet — {category.displayName}</h2>
-        {latestCompAt ? (
-          <p className="text-xs text-amber-600 dark:text-amber-400">
-            Comps last updated {formatDistanceToNow(new Date(latestCompAt), { addSuffix: true })} — may be stale
-          </p>
-        ) : (
-          <p className="text-xs text-foreground/50">No comps logged yet.</p>
-        )}
-      </div>
+    <aside className="motif-surface space-y-3 rounded-lg border border-border-1 p-4">
+      <h2 className="font-display text-sm font-semibold text-foreground/70">Fact Sheet — {category.displayName}</h2>
 
-      <section>
-        <h3 className="mb-1 text-xs font-semibold uppercase text-foreground/50">Why is this priced high?</h3>
+      <LiveStatsSection card={card} />
+
+      <Section icon={Sparkles} title="Why is this priced high?">
         <ul className="list-disc space-y-1 pl-4 text-sm">
           {reasons.map((r) => (
             <li key={r}>{r}</li>
           ))}
         </ul>
-      </section>
+      </Section>
 
-      <section>
-        <h3 className="mb-1 text-xs font-semibold uppercase text-foreground/50">Price History</h3>
+      <Section icon={LineChartIcon} title="Price History">
         <PriceSparkline comps={card.priceComps} />
-      </section>
+      </Section>
 
-      <section>
-        <h3 className="mb-2 text-xs font-semibold uppercase text-foreground/50">Comps</h3>
-        <ul className="mb-2 space-y-1 text-sm">
+      <Section
+        icon={Receipt}
+        title="Comps"
+        help="Manually logged comparable sale prices from eBay, 130point, PWCC, or wherever you found them — there's no live pricing API wired up, so add these yourself."
+      >
+        {latestCompAt && (
+          <p className="text-xs text-amber-600 dark:text-amber-400">
+            Last added {formatDistanceToNow(new Date(latestCompAt), { addSuffix: true })} — may be stale
+          </p>
+        )}
+        <ul className="space-y-1 text-sm">
           {card.priceComps.map((comp) => (
             <li key={comp.id} className="flex items-center justify-between gap-2">
               <span>
@@ -114,10 +204,13 @@ export function FactSheetPanel({ card, category }: { card: CardDetailDTO; catego
             Add comp
           </button>
         </form>
-      </section>
+      </Section>
 
-      <section>
-        <h3 className="mb-1 text-xs font-semibold uppercase text-foreground/50">Negotiation Floor</h3>
+      <Section
+        icon={Scale}
+        title="Negotiation Floor"
+        help="Cost basis plus your minimum margin % (set in Settings) — a haggling floor so you don't accidentally sell under cost."
+      >
         {floor !== null ? (
           <p className="text-sm">
             Don&apos;t go below <span className="font-semibold">฿{floor.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
@@ -126,10 +219,9 @@ export function FactSheetPanel({ card, category }: { card: CardDetailDTO; catego
         ) : (
           <p className="text-sm text-foreground/50">Loading…</p>
         )}
-      </section>
+      </Section>
 
-      <section>
-        <h3 className="mb-1 text-xs font-semibold uppercase text-foreground/50">Hot Card Flag</h3>
+      <Section icon={Flame} title="Hot Card Flag">
         <label className="mb-1 flex items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -152,10 +244,9 @@ export function FactSheetPanel({ card, category }: { card: CardDetailDTO; catego
             Save
           </button>
         </div>
-      </section>
+      </Section>
 
-      <section>
-        <h3 className="mb-1 text-xs font-semibold uppercase text-foreground/50">Set / Card Background</h3>
+      <Section icon={BookOpen} title="Set / Card Background">
         <textarea
           value={notes}
           onChange={(e) => setNotes(e.target.value)}
@@ -169,7 +260,7 @@ export function FactSheetPanel({ card, category }: { card: CardDetailDTO; catego
         >
           Save notes
         </button>
-      </section>
+      </Section>
     </aside>
   );
 }

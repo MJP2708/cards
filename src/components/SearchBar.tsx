@@ -2,8 +2,10 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 
 export function SearchBar() {
+  const t = useTranslations("common");
   const router = useRouter();
   const [value, setValue] = useState("");
 
@@ -19,8 +21,8 @@ export function SearchBar() {
         type="search"
         value={value}
         onChange={(e) => setValue(e.target.value)}
-        placeholder="Search all categories…"
-        aria-label="Search all categories"
+        placeholder={t("search")}
+        aria-label={t("search")}
         className="booth-target w-full rounded-md border border-border-1 bg-surface-1 px-3 py-1.5 text-sm outline-none focus:border-accent"
       />
     </form>

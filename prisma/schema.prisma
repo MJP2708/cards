@@ -32,6 +32,8 @@ model Card {
   isHot       Boolean   @default(false) // manual "hot card" flag
   hotNote     String?
   researchNotes String? // manual set/card background notes for the Fact Sheet panel
+  liveStats        Json? // cached balldontlie/API-Football player stats snapshot
+  liveStatsFetchedAt DateTime? // rate limits are tight (100 req/day free tier) — cache, don't poll
   dateAdded   DateTime  @default(now())
   dateSold    DateTime?
   soldPrice   Float?
@@ -62,6 +64,7 @@ model Sale {
   cardId        String
   card          Card     @relation(fields: [cardId], references: [id])
   soldPrice     Float
+  quantitySold  Int      @default(1)
   paymentMethod String
   timestamp     DateTime @default(now())
   buyerContact  String?

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useBulkAction } from "@/lib/data/cards";
+import { actionWithUndo } from "@/lib/undoToast";
 
 export function BulkActionsBar({
   selectedIds,
@@ -75,9 +76,11 @@ export function BulkActionsBar({
       </button>
 
       <button
-        onClick={async () => {
-          if (!confirm(`Delete ${selectedIds.length} cards? This cannot be undone.`)) return;
-          await bulkAction.mutateAsync({ ids: selectedIds, action: "delete" });
+        onClick={() => {
+          const ids = selectedIds;
+          actionWithUndo(`${ids.length} card${ids.length === 1 ? "" : "s"} deleted`, () => {
+            bulkAction.mutate({ ids, action: "delete" });
+          });
           onClear();
         }}
         className="booth-target rounded-md border border-red-300 px-3 py-1.5 text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"

@@ -16,12 +16,17 @@ export type FieldDef = z.infer<typeof fieldDefSchema>;
 export const fieldSchemaSchema = z.array(fieldDefSchema);
 export type FieldSchema = FieldDef[];
 
+export const HEADER_FONTS = ["oswald", "barlowCondensed", "baloo2", "cinzel", "geist"] as const;
+export const ICON_SETS = ["basketball", "soccer", "pokemon", "tcg", "neutral"] as const;
+
 export const themeTokensSchema = z.object({
   accent: z.string(),
   accentDark: z.string().optional(),
   secondary: z.string(),
   surface: z.string().optional(),
   motif: z.enum(["hardwood", "pitch", "holo", "frame", "none"]).default("none"),
+  headerFont: z.enum(HEADER_FONTS).default("geist"),
+  iconSet: z.enum(ICON_SETS).default("neutral"),
 });
 export type ThemeTokens = z.infer<typeof themeTokensSchema>;
 
@@ -32,37 +37,7 @@ export const NBA_FIELDS: FieldSchema = [
 
 export const FOOTBALL_FIELDS: FieldSchema = [
   { key: "team", label: "Team", kind: "attribute", type: "text", required: true },
-  { key: "position", label: "Position", kind: "attribute", type: "text" },
-  {
-    key: "league",
-    label: "League",
-    kind: "attribute",
-    type: "select",
-    options: ["NFL", "Soccer"],
-    required: true,
-  },
-];
-
-export const POKEMON_FIELDS: FieldSchema = [
-  {
-    key: "language",
-    label: "Language",
-    kind: "attribute",
-    type: "select",
-    options: ["EN", "JP", "Other"],
-  },
-  {
-    key: "pokemonCardType",
-    label: "Card Type",
-    kind: "attribute",
-    type: "select",
-    options: ["Pokemon", "Trainer", "Energy"],
-  },
-];
-
-export const TCG_FIELDS: FieldSchema = [
-  { key: "gameTitle", label: "Game Title", kind: "attribute", type: "text", required: true },
-  { key: "tcgCardType", label: "Card Type", kind: "attribute", type: "text" },
+  { key: "position", label: "Position (e.g. FW/MF/DF/GK)", kind: "attribute", type: "text" },
 ];
 
 // Fields every category shares beyond the base Card columns already on the model.

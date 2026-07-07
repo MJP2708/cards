@@ -1,0 +1,21 @@
+{
+  "appName": "Booth Cards",
+  "addCard": "เพิ่มการ์ด",
+  "markSold": "ทำเครื่องหมายขายแล้ว",
+  "save": "บันทึก",
+  "saveChanges": "บันทึกการเปลี่ยนแปลง",
+  "cancel": "ยกเลิก",
+  "delete": "ลบ",
+  "confirm": "ยืนยัน",
+  "undo": "เลิกทำ",
+  "loading": "กำลังโหลด…",
+  "search": "ค้นหาทุกหมวดหมู่…",
+  "allCategories": "ทุกหมวดหมู่",
+  "inStock": "ในสต็อก",
+  "reserved": "จองแล้ว",
+  "onHold": "พักไว้",
+  "sold": "ขายแล้ว",
+  "darkMode": "โหมดมืด",
+  "lightMode": "โหมดสว่าง",
+  "boothMode": "โหมดบูธ"
+}

@@ -12,16 +12,36 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { Wallet, ShoppingBag, Archive, CheckCircle2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useDashboard } from "@/lib/data/dashboard";
 import { useUiStore } from "@/store/uiStore";
 import { chartColors } from "@/lib/chartColors";
 import { UsdHint } from "@/components/UsdHint";
+import { StatTileSkeleton, ChartSkeleton } from "@/components/ui/Skeleton";
 
-function StatTile({ label, value, usdAmount }: { label: string; value: string; usdAmount?: number }) {
+function StatTile({
+  label,
+  value,
+  usdAmount,
+  icon: Icon,
+  emphasize,
+}: {
+  label: string;
+  value: string;
+  usdAmount?: number;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  emphasize?: boolean;
+}) {
   return (
-    <div className="rounded-lg border border-border-1 p-4">
-      <p className="text-xs text-foreground/50">{label}</p>
-      <p className="text-2xl font-semibold">
+    <div
+      className={`rounded-lg border p-4 ${emphasize ? "border-accent bg-[color-mix(in_srgb,var(--accent)_8%,var(--background))]" : "border-border-1"}`}
+    >
+      <div className="mb-1 flex items-center gap-1.5 text-xs text-foreground/50">
+        <Icon className="h-3.5 w-3.5" style={{ color: emphasize ? "var(--accent)" : undefined }} />
+        {label}
+      </div>
+      <p className="font-display text-2xl font-semibold">
         {value}
         {usdAmount !== undefined && <UsdHint amountThb={usdAmount} className="text-sm" />}
       </p>
@@ -43,30 +63,59 @@ function ChartCard({ title, children }: { title: string; children: React.ReactNo
 }
 
 export default function DashboardPage() {
+  const t = useTranslations("dashboard");
   const { data, isLoading } = useDashboard();
   const isDark = useUiStore((s) => s.isDark);
   const colors = chartColors(isDark);
 
-  if (isLoading || !data) return <p className="text-sm text-foreground/60">Loading…</p>;
+  if (isLoading || !data) {
+    return (
+      <div className="max-w-5xl space-y-6">
+        <h1 className="font-display text-xl font-semibold">{t("title")}</h1>
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {[...Array(4)].map((_, i) => (
+            <StatTileSkeleton key={i} />
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          {[...Array(4)].map((_, i) => (
+            <ChartSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   const soldRatio = data.inStockCount + data.soldCount > 0 ? (data.soldCount / (data.inStockCount + data.soldCount)) * 100 : 0;
 
   return (
     <div className="max-w-5xl space-y-6">
-      <h1 className="text-xl font-semibold">Dashboard</h1>
+      <h1 className="font-display text-xl font-semibold">{t("title")}</h1>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatTile
-          label="In-Stock Inventory Value"
+          label={t("todayRevenue")}
+          value={`฿${data.todayRevenue.toLocaleString()}`}
+          usdAmount={data.todayRevenue}
+          icon={Wallet}
+          emphasize
+        />
+        <StatTile label={t("itemsSoldToday")} value={data.todayItemsSold.toLocaleString()} icon={ShoppingBag} emphasize />
+        <StatTile
+          label={t("inStockValue")}
           value={`฿${data.totalInventoryValue.toLocaleString()}`}
           usdAmount={data.totalInventoryValue}
+          icon={Archive}
         />
-        <StatTile label="Items In Stock" value={data.inStockCount.toLocaleString()} />
-        <StatTile label="Items Sold" value={`${data.soldCount.toLocaleString()} (${soldRatio.toFixed(0)}%)`} />
+        <StatTile
+          label={t("totalSold")}
+          value={`${data.soldCount.toLocaleString()} (${soldRatio.toFixed(0)}%)`}
+          icon={CheckCircle2}
+        />
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <ChartCard title="Revenue by Category">
+        <ChartCard title={t("revenueByCategory")}>
           <BarChart data={data.categoryBreakdown} margin={{ left: 4, right: 12 }}>
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="category" tick={{ fill: colors.text, fontSize: 12 }} axisLine={{ stroke: colors.grid }} tickLine={false} />
@@ -76,7 +125,7 @@ export default function DashboardPage() {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="Profit by Category">
+        <ChartCard title={t("profitByCategory")}>
           <BarChart data={data.categoryBreakdown} margin={{ left: 4, right: 12 }}>
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="category" tick={{ fill: colors.text, fontSize: 12 }} axisLine={{ stroke: colors.grid }} tickLine={false} />
@@ -86,7 +135,7 @@ export default function DashboardPage() {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="Top Selling Cards">
+        <ChartCard title={t("topSelling")}>
           <BarChart data={data.topSelling} layout="vertical" margin={{ left: 12, right: 12 }}>
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tick={{ fill: colors.text, fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -103,7 +152,7 @@ export default function DashboardPage() {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title="Card Type Performance (Profit)">
+        <ChartCard title={t("cardTypePerformance")}>
           <BarChart data={data.cardTypePerformance} layout="vertical" margin={{ left: 12, right: 12 }}>
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tick={{ fill: colors.text, fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -125,7 +174,7 @@ export default function DashboardPage() {
         </ChartCard>
       </div>
 
-      <ChartCard title="Cumulative Profit Over the Event">
+      <ChartCard title={t("cumulativeProfit")}>
         <LineChart data={data.profitOverTime} margin={{ left: 4, right: 12 }}>
           <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="date" tick={{ fill: colors.text, fontSize: 12 }} axisLine={{ stroke: colors.grid }} tickLine={false} />

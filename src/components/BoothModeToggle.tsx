@@ -1,8 +1,10 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { useUiStore } from "@/store/uiStore";
 
 export function BoothModeToggle() {
+  const t = useTranslations("common");
   const boothMode = useUiStore((s) => s.boothMode);
   const toggleBoothMode = useUiStore((s) => s.toggleBoothMode);
 
@@ -17,7 +19,7 @@ export function BoothModeToggle() {
           : "border-border-1 hover:bg-surface-1"
       }`}
     >
-      Booth mode
+      {t("boothMode")}
     </button>
   );
 }

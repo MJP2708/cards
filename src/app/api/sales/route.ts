@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   const remaining = card.quantity - quantitySold;
   const [sale] = await prisma.$transaction([
     prisma.sale.create({
-      data: { cardId, soldPrice, paymentMethod, buyerContact },
+      data: { cardId, soldPrice, quantitySold, paymentMethod, buyerContact },
     }),
     prisma.card.update({
       where: { id: cardId },

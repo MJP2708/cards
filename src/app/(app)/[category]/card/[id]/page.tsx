@@ -8,6 +8,7 @@ import { useCard, useUpdateCard, useDeleteCard } from "@/lib/data/cards";
 import { CardForm, formValuesFromCard, formValuesToInput } from "@/components/cards/CardForm";
 import { MarkSoldDialog } from "@/components/cards/MarkSoldDialog";
 import { FactSheetPanel } from "@/components/cards/FactSheetPanel";
+import { actionWithUndo } from "@/lib/undoToast";
 
 export default function CardDetailPage() {
   const params = useParams<{ category: string; id: string }>();
@@ -51,9 +52,10 @@ export default function CardDetailPage() {
             </button>
           )}
           <button
-            onClick={async () => {
-              if (!confirm(`Delete "${card.name}"? This cannot be undone.`)) return;
-              await deleteCard.mutateAsync(card.id);
+            onClick={() => {
+              actionWithUndo(`"${card.name}" deleted`, () => {
+                deleteCard.mutate(card.id);
+              });
               router.push(`/${category.key.toLowerCase()}`);
             }}
             className="booth-target rounded-md border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"

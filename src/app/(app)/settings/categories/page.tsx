@@ -1,9 +1,29 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
 import { useSettings, useUpdateSettings } from "@/lib/data/settings";
-import type { FieldDef } from "@/lib/fieldSchema";
+import { useUiStore } from "@/store/uiStore";
+import { useOnboardingStore } from "@/store/onboardingStore";
+import { CategoryIcon } from "@/components/icons/CategoryIcon";
+import { HEADER_FONTS, ICON_SETS, type FieldDef, type ThemeTokens } from "@/lib/fieldSchema";
+
+const HEADER_FONT_LABELS: Record<ThemeTokens["headerFont"], string> = {
+  oswald: "Oswald (condensed, bold)",
+  barlowCondensed: "Barlow Condensed (clean, sporty)",
+  baloo2: "Baloo 2 (rounded, playful)",
+  cinzel: "Cinzel (serif, arcane)",
+  geist: "Geist (default, no display swap)",
+};
+
+const ICON_SET_LABELS: Record<ThemeTokens["iconSet"], string> = {
+  basketball: "Basketball",
+  soccer: "Soccer ball",
+  pokemon: "Energy bolt",
+  tcg: "Card stack",
+  neutral: "Neutral grid",
+};
 
 type DraftField = FieldDef & { optionsText: string };
 
@@ -12,6 +32,8 @@ function emptyField(): DraftField {
 }
 
 export default function SettingsPage() {
+  const t = useTranslations("settings");
+  const common = useTranslations("common");
   const { data: categories } = useCategories();
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
@@ -32,7 +54,12 @@ export default function SettingsPage() {
   const [accent, setAccent] = useState("#64748B");
   const [secondary, setSecondary] = useState("#334155");
   const [motif, setMotif] = useState<"hardwood" | "pitch" | "holo" | "frame" | "none">("none");
+  const [headerFont, setHeaderFont] = useState<ThemeTokens["headerFont"]>("geist");
+  const [iconSet, setIconSet] = useState<ThemeTokens["iconSet"]>("neutral");
   const [fields, setFields] = useState<DraftField[]>([emptyField()]);
+  const reducedMotion = useUiStore((s) => s.reducedMotion);
+  const setReducedMotion = useUiStore((s) => s.setReducedMotion);
+  const openTour = useOnboardingStore((s) => s.openTour);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState(false);
 
@@ -59,7 +86,7 @@ export default function SettingsPage() {
           key,
           displayName,
           fieldSchema,
-          themeTokens: { accent, secondary, motif },
+          themeTokens: { accent, secondary, motif, headerFont, iconSet },
         }),
       });
       if (!res.ok) {
@@ -77,13 +104,13 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl space-y-8">
-      <h1 className="text-xl font-semibold">Settings</h1>
+      <h1 className="text-xl font-semibold">{t("title")}</h1>
 
       <section className="space-y-3 rounded-lg border border-border-1 p-4">
-        <h2 className="text-sm font-semibold text-foreground/70">Currency &amp; Negotiation</h2>
+        <h2 className="text-sm font-semibold text-foreground/70">{t("currencyAndNegotiation")}</h2>
         <div className="flex flex-wrap gap-4 text-sm">
           <label className="flex flex-col gap-1">
-            Minimum margin %
+            {t("minMarginPct")}
             <input
               type="number"
               value={minMarginPct}
@@ -92,7 +119,7 @@ export default function SettingsPage() {
             />
           </label>
           <label className="flex flex-col gap-1">
-            THB per 1 USD (for reference conversion)
+            {t("usdExchangeRate")}
             <input
               type="number"
               step="0.01"
@@ -113,28 +140,46 @@ export default function SettingsPage() {
           }}
           className="booth-target rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
         >
-          Save
+          {common("save")}
         </button>
-        {settingsSaved && <p className="text-sm text-emerald-600">Saved.</p>}
+        {settingsSaved && <p className="text-sm text-emerald-600">{t("saved")}</p>}
       </section>
 
       <section className="space-y-3 rounded-lg border border-border-1 p-4">
-        <h2 className="text-sm font-semibold text-foreground/70">Backup</h2>
-        <p className="text-sm text-foreground/60">Download a full JSON export of all inventory, sales, and settings data.</p>
+        <h2 className="text-sm font-semibold text-foreground/70">{t("help")}</h2>
+        <button
+          onClick={openTour}
+          className="booth-target rounded-md border border-border-1 px-4 py-2 text-sm hover:bg-surface-1"
+        >
+          {t("replayTour")}
+        </button>
+      </section>
+
+      <section className="space-y-3 rounded-lg border border-border-1 p-4">
+        <h2 className="text-sm font-semibold text-foreground/70">{t("accessibility")}</h2>
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={reducedMotion} onChange={(e) => setReducedMotion(e.target.checked)} />
+          {t("reduceMotion")}
+        </label>
+      </section>
+
+      <section className="space-y-3 rounded-lg border border-border-1 p-4">
+        <h2 className="text-sm font-semibold text-foreground/70">{t("backup")}</h2>
+        <p className="text-sm text-foreground/60">{t("backupDescription")}</p>
         <a
           href="/api/backup"
           className="booth-target inline-block rounded-md border border-border-1 px-4 py-2 text-sm hover:bg-surface-1"
         >
-          Download Backup (JSON)
+          {t("downloadBackup")}
         </a>
       </section>
 
       <section className="space-y-3 rounded-lg border border-border-1 p-4">
-        <h2 className="text-sm font-semibold text-foreground/70">Existing Categories</h2>
+        <h2 className="text-sm font-semibold text-foreground/70">{t("existingCategories")}</h2>
         <ul className="flex flex-wrap gap-2 text-sm">
           {categories?.map((c) => (
             <li key={c.key} className="flex items-center gap-2 rounded-full border border-border-1 px-3 py-1">
-              <span className="h-2 w-2 rounded-full" style={{ background: c.themeTokens.accent }} />
+              <CategoryIcon iconSet={c.themeTokens.iconSet} className="h-3.5 w-3.5" style={{ color: c.themeTokens.accent }} />
               {c.displayName}
             </li>
           ))}
@@ -142,29 +187,29 @@ export default function SettingsPage() {
       </section>
 
       <section className="space-y-4 rounded-lg border border-border-1 p-4">
-        <h2 className="text-sm font-semibold text-foreground/70">Add a Custom Category</h2>
+        <h2 className="text-sm font-semibold text-foreground/70">{t("addCustomCategory")}</h2>
         <form onSubmit={handleCreateCategory} className="space-y-4">
           {createError && <p className="text-sm text-red-600">{createError}</p>}
-          {createSuccess && <p className="text-sm text-emerald-600">Category created.</p>}
+          {createSuccess && <p className="text-sm text-emerald-600">{t("categoryCreated")}</p>}
           <div className="grid grid-cols-2 gap-3 text-sm">
             <label className="flex flex-col gap-1">
-              Key (unique, e.g. "YuGiOh")
+              {t("categoryKey")}
               <input required value={key} onChange={(e) => setKey(e.target.value)} className="rounded-md border border-border-1 px-2 py-1.5" />
             </label>
             <label className="flex flex-col gap-1">
-              Display name
+              {t("displayName")}
               <input required value={displayName} onChange={(e) => setDisplayName(e.target.value)} className="rounded-md border border-border-1 px-2 py-1.5" />
             </label>
             <label className="flex flex-col gap-1">
-              Accent color
+              {t("accentColor")}
               <input type="color" value={accent} onChange={(e) => setAccent(e.target.value)} className="h-9 rounded-md border border-border-1" />
             </label>
             <label className="flex flex-col gap-1">
-              Secondary color
+              {t("secondaryColor")}
               <input type="color" value={secondary} onChange={(e) => setSecondary(e.target.value)} className="h-9 rounded-md border border-border-1" />
             </label>
             <label className="flex flex-col gap-1">
-              Motif
+              {t("motif")}
               <select value={motif} onChange={(e) => setMotif(e.target.value as typeof motif)} className="rounded-md border border-border-1 px-2 py-1.5">
                 <option value="none">None</option>
                 <option value="hardwood">Hardwood</option>
@@ -173,10 +218,42 @@ export default function SettingsPage() {
                 <option value="frame">Frame</option>
               </select>
             </label>
+            <label className="flex flex-col gap-1">
+              {t("headerFont")}
+              <select
+                value={headerFont}
+                onChange={(e) => setHeaderFont(e.target.value as ThemeTokens["headerFont"])}
+                className="rounded-md border border-border-1 px-2 py-1.5"
+              >
+                {HEADER_FONTS.map((f) => (
+                  <option key={f} value={f}>
+                    {HEADER_FONT_LABELS[f]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1">
+              {t("icon")}
+              <select
+                value={iconSet}
+                onChange={(e) => setIconSet(e.target.value as ThemeTokens["iconSet"])}
+                className="rounded-md border border-border-1 px-2 py-1.5"
+              >
+                {ICON_SETS.map((i) => (
+                  <option key={i} value={i}>
+                    {ICON_SET_LABELS[i]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <div className="flex items-end gap-2 pb-1.5">
+              <span className="text-xs text-foreground/50">Preview:</span>
+              <CategoryIcon iconSet={iconSet} className="h-5 w-5" style={{ color: accent }} />
+            </div>
           </div>
 
           <div>
-            <h3 className="mb-2 text-xs font-semibold uppercase text-foreground/50">Extra Fields for this Category</h3>
+            <h3 className="mb-2 text-xs font-semibold uppercase text-foreground/50">{t("extraFields")}</h3>
             <div className="space-y-2">
               {fields.map((field, i) => (
                 <div key={i} className="flex flex-wrap items-center gap-1.5 text-xs">
@@ -234,13 +311,13 @@ export default function SettingsPage() {
                 onClick={() => setFields((fs) => [...fs, emptyField()])}
                 className="rounded-md border border-dashed border-border-1 px-2 py-1 text-xs hover:bg-surface-1"
               >
-                + Add field
+                {t("addField")}
               </button>
             </div>
           </div>
 
           <button type="submit" className="booth-target rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark">
-            Create Category
+            {t("createCategory")}
           </button>
         </form>
       </section>

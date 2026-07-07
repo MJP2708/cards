@@ -1,0 +1,12 @@
+{
+  "title": "แดชบอร์ด",
+  "todayRevenue": "รายได้วันนี้",
+  "itemsSoldToday": "จำนวนที่ขายวันนี้",
+  "inStockValue": "มูลค่าสินค้าคงคลัง",
+  "totalSold": "ขายไปทั้งหมด",
+  "revenueByCategory": "รายได้ตามหมวดหมู่",
+  "profitByCategory": "กำไรตามหมวดหมู่",
+  "topSelling": "การ์ดขายดี",
+  "cardTypePerformance": "ผลงานตามประเภทการ์ด (กำไร)",
+  "cumulativeProfit": "กำไรสะสมตลอดงาน"
+}
