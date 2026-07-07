@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { useCategories } from "@/hooks/useCategories";
+import { ArrowLeft } from "lucide-react";
 import { useCreateCard } from "@/lib/data/cards";
 import { CardForm, emptyFormValues, formValuesToInput } from "@/components/cards/CardForm";
 
@@ -39,7 +40,14 @@ export default function NewCardPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Add {category.displayName} Card</h1>
+      <Link
+        href={`/${category.key.toLowerCase()}`}
+        className="inline-flex items-center gap-1 text-sm text-foreground/60 hover:text-foreground"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Back to {category.displayName}
+      </Link>
+      <h1 className="font-display text-xl font-semibold">Add {category.displayName} Card</h1>
       <CardForm
         category={category}
         initial={emptyFormValues(category)}

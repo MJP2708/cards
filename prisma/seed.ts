@@ -5,9 +5,14 @@ import { NBA_FIELDS, FOOTBALL_FIELDS, type ThemeTokens } from "../src/lib/fieldS
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
 
+// accent is used as a solid fill behind white text (buttons, active tabs,
+// badges) throughout the app, so it must itself clear WCAG AA (4.5:1) against
+// white — the original bright brand tones (#F97316, #16A34A) only hit
+// 2.80:1/3.30:1. Kept as accentLight for tints/icons where full contrast
+// isn't load-bearing; accent/accentDark are now the two darker, AA-safe steps.
 const NBA_THEME: ThemeTokens = {
-  accent: "#F97316",
-  accentDark: "#C2410C",
+  accent: "#C2410C", // 5.18:1 vs white
+  accentDark: "#9A3412",
   secondary: "#18181B",
   surface: "#FFF7ED",
   motif: "hardwood",
@@ -16,8 +21,8 @@ const NBA_THEME: ThemeTokens = {
 };
 
 const FOOTBALL_THEME: ThemeTokens = {
-  accent: "#16A34A",
-  accentDark: "#15803D",
+  accent: "#15803D", // 5.02:1 vs white
+  accentDark: "#166534",
   secondary: "#FFFFFF",
   surface: "#F0FDF4",
   motif: "pitch",

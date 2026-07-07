@@ -160,13 +160,13 @@ export default function CategoryInventoryPage() {
               <thead className="bg-surface-1 text-left text-xs uppercase text-foreground/60">
                 <tr>
                   <th className="w-8 px-3 py-2"></th>
-                  {isAll && <th className="px-3 py-2">Category</th>}
+                  {isAll && <th className="hidden px-3 py-2 sm:table-cell">Category</th>}
                   <th className="px-3 py-2">Name</th>
-                  <th className="px-3 py-2">Series/Set</th>
-                  <th className="px-3 py-2">Rarity</th>
-                  <th className="px-3 py-2">Grade</th>
+                  <th className="hidden px-3 py-2 md:table-cell">Series/Set</th>
+                  <th className="hidden px-3 py-2 lg:table-cell">Rarity</th>
+                  <th className="hidden px-3 py-2 lg:table-cell">Grade</th>
                   <th className="px-3 py-2">Price</th>
-                  <th className="px-3 py-2">Status</th>
+                  <th className="hidden px-3 py-2 sm:table-cell">Status</th>
                   <th className="px-3 py-2"></th>
                 </tr>
               </thead>
@@ -179,10 +179,14 @@ export default function CategoryInventoryPage() {
                         <input type="checkbox" checked={selectedIds.has(card.id)} onChange={() => toggleSelect(card.id)} />
                       </td>
                       {isAll && (
-                        <td className="px-3 py-2">
+                        <td className="hidden px-3 py-2 sm:table-cell">
                           <span
-                            className="flex w-fit items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium text-white"
-                            style={{ background: cardCategory?.themeTokens.accent ?? "#64748B" }}
+                            className="flex w-fit items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
+                            style={{
+                              background: `color-mix(in srgb, ${cardCategory?.themeTokens.accent ?? "#64748B"} 14%, var(--surface-1))`,
+                              borderColor: `color-mix(in srgb, ${cardCategory?.themeTokens.accent ?? "#64748B"} 35%, var(--border-1))`,
+                              color: cardCategory?.themeTokens.accentDark ?? cardCategory?.themeTokens.accent ?? "#334155",
+                            }}
                           >
                             <CategoryIcon iconSet={cardCategory?.themeTokens.iconSet ?? "neutral"} className="h-3 w-3" />
                             {cardCategory?.displayName ?? card.category}
@@ -198,16 +202,21 @@ export default function CategoryInventoryPage() {
                             HOT
                           </span>
                         )}
+                        {/* Series + status ride along under the name below `md`, since those columns hide there. */}
+                        <p className="text-xs text-foreground/50 md:hidden">
+                          {card.series}
+                          <span className="sm:hidden"> · {card.status}</span>
+                        </p>
                       </td>
-                      <td className="px-3 py-2">{card.series}</td>
-                      <td className="px-3 py-2">{card.rarity ?? "—"}</td>
-                      <td className="px-3 py-2">{card.grade ?? "—"}</td>
+                      <td className="hidden px-3 py-2 md:table-cell">{card.series}</td>
+                      <td className="hidden px-3 py-2 lg:table-cell">{card.rarity ?? "—"}</td>
+                      <td className="hidden px-3 py-2 lg:table-cell">{card.grade ?? "—"}</td>
                       <td className="px-3 py-2">
                         ฿{card.askingPrice.toLocaleString()}
                         <UsdHint amountThb={card.askingPrice} />
                         {card.quantity > 1 && <span className="text-foreground/50"> ×{card.quantity}</span>}
                       </td>
-                      <td className="px-3 py-2">{card.status}</td>
+                      <td className="hidden px-3 py-2 sm:table-cell">{card.status}</td>
                       <td className="px-3 py-2 text-right">
                         {card.status !== "Sold" && (
                           <button

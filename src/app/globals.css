@@ -114,7 +114,22 @@ body {
   border-top: none;
 }
 
-/* Booth mode: larger tap targets, bigger type, for fast use at a table in bright light. */
+/* Booth mode: larger tap targets, bigger type, for fast use at a table in bright
+   light. Applies to every real form control/button automatically — not just
+   elements manually tagged `.booth-target` — so text inputs and selects inside
+   dialogs/forms scale up too, not only primary buttons. `.booth-target` still
+   exists for elements that need an even bigger minimum (e.g. Mark Sold). */
+.booth-mode button,
+.booth-mode input,
+.booth-mode select,
+.booth-mode textarea {
+  font-size: 1.05rem;
+}
+.booth-mode button,
+.booth-mode input,
+.booth-mode select {
+  min-height: 3rem;
+}
 .booth-mode .booth-target {
   min-height: 3.5rem;
   font-size: 1.125rem;

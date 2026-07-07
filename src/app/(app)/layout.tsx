@@ -3,12 +3,10 @@ import { getTranslations } from "next-intl/server";
 import { CategorySwitcher } from "@/components/CategorySwitcher";
 import { SearchBar } from "@/components/SearchBar";
 import { OfflineBanner } from "@/components/OfflineBanner";
-import { DarkModeToggle } from "@/components/DarkModeToggle";
-import { BoothModeToggle } from "@/components/BoothModeToggle";
 import { CommandPalette } from "@/components/CommandPalette";
 import { CommandPaletteButton } from "@/components/CommandPaletteButton";
 import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { MoreMenu } from "@/components/MoreMenu";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const t = await getTranslations("nav");
@@ -32,10 +30,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           <SearchBar />
           <div className="ml-auto flex items-center gap-2">
             <OfflineBanner />
-            <LanguageSwitcher />
             <CommandPaletteButton />
-            <BoothModeToggle />
-            <DarkModeToggle />
+            <MoreMenu />
           </div>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border-1 px-4 py-2">

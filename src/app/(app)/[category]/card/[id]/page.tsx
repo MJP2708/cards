@@ -3,11 +3,13 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import { ArrowLeft } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import { useCard, useUpdateCard, useDeleteCard } from "@/lib/data/cards";
 import { CardForm, formValuesFromCard, formValuesToInput } from "@/components/cards/CardForm";
 import { MarkSoldDialog } from "@/components/cards/MarkSoldDialog";
 import { FactSheetPanel } from "@/components/cards/FactSheetPanel";
+import { Skeleton } from "@/components/ui/Skeleton";
 import { actionWithUndo } from "@/lib/undoToast";
 
 export default function CardDetailPage() {
@@ -23,14 +25,30 @@ export default function CardDetailPage() {
   const category = categories?.find((c) => c.key.toLowerCase() === (card?.category ?? params.category).toLowerCase());
 
   if (isLoading || !card || !category) {
-    return <p className="text-sm text-foreground/60">Loading…</p>;
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-64" />
+        <div className="grid gap-8 lg:grid-cols-2">
+          <Skeleton className="h-96" />
+          <Skeleton className="h-96" />
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
+      <Link
+        href={`/${category.key.toLowerCase()}`}
+        className="inline-flex items-center gap-1 text-sm text-foreground/60 hover:text-foreground"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Back to {category.displayName}
+      </Link>
+
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-semibold">{card.name}</h1>
+          <h1 className="font-display text-xl font-semibold">{card.name}</h1>
           <p className="text-sm text-foreground/60">
             {category.displayName} · {card.status} · Qty {card.quantity}
           </p>
@@ -65,22 +83,29 @@ export default function CardDetailPage() {
         </div>
       </div>
 
+      {/* Fact Sheet comes first in DOM order so it's what you see first when
+          stacked on mobile — that's what you need instantly with a buyer in
+          front of you, not the edit form. Desktop shows them side by side. */}
       <div className="grid gap-8 lg:grid-cols-2">
-        <CardForm
-          category={category}
-          initial={formValuesFromCard(card)}
-          submitLabel="Save Changes"
-          errors={errors}
-          onSubmit={async (values) => {
-            setErrors([]);
-            try {
-              await updateCard.mutateAsync({ id: card.id, input: formValuesToInput(category, values) });
-            } catch (e) {
-              setErrors([e instanceof Error ? e.message : "Failed to save"]);
-            }
-          }}
-        />
-        <FactSheetPanel card={card} category={category} />
+        <div className="order-2 lg:order-1">
+          <CardForm
+            category={category}
+            initial={formValuesFromCard(card)}
+            submitLabel="Save Changes"
+            errors={errors}
+            onSubmit={async (values) => {
+              setErrors([]);
+              try {
+                await updateCard.mutateAsync({ id: card.id, input: formValuesToInput(category, values) });
+              } catch (e) {
+                setErrors([e instanceof Error ? e.message : "Failed to save"]);
+              }
+            }}
+          />
+        </div>
+        <div className="order-1 lg:order-2">
+          <FactSheetPanel card={card} category={category} />
+        </div>
       </div>
 
       {showSoldDialog && <MarkSoldDialog card={card} onClose={() => setShowSoldDialog(false)} />}
