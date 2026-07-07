@@ -1,0 +1,60 @@
+"use client";
+
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useState } from "react";
+import { useCategories } from "@/hooks/useCategories";
+import { useCreateCard } from "@/lib/data/cards";
+import { CardForm, emptyFormValues, formValuesToInput } from "@/components/cards/CardForm";
+
+export default function NewCardPage() {
+  const params = useParams<{ category: string }>();
+  const router = useRouter();
+  const { data: categories, isLoading } = useCategories();
+  const createCard = useCreateCard();
+  const [errors, setErrors] = useState<string[]>([]);
+
+  const category = categories?.find((c) => c.key.toLowerCase() === params.category.toLowerCase());
+
+  if (isLoading) return <p className="text-sm text-foreground/60">Loading…</p>;
+
+  if (!category) {
+    return (
+      <div className="max-w-md space-y-3">
+        <p className="text-sm">Choose a category to add a card to:</p>
+        <div className="flex flex-wrap gap-2">
+          {categories?.map((c) => (
+            <Link
+              key={c.key}
+              href={`/${c.key.toLowerCase()}/new`}
+              className="rounded-md border border-border-1 px-3 py-1.5 text-sm hover:bg-surface-1"
+            >
+              {c.displayName}
+            </Link>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <h1 className="text-xl font-semibold">Add {category.displayName} Card</h1>
+      <CardForm
+        category={category}
+        initial={emptyFormValues(category)}
+        submitLabel="Add Card"
+        errors={errors}
+        onSubmit={async (values) => {
+          setErrors([]);
+          try {
+            const card = await createCard.mutateAsync(formValuesToInput(category, values));
+            router.push(`/${category.key.toLowerCase()}/card/${card.id}`);
+          } catch (e) {
+            setErrors([e instanceof Error ? e.message : "Failed to create card"]);
+          }
+        }}
+      />
+    </div>
+  );
+}

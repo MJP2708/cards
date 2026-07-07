@@ -1,0 +1,79 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --surface-1: #f8fafc;
+  --border-1: #e2e8f0;
+
+  /* Category theme tokens — overwritten at runtime by ThemeEffect based on the active category. */
+  --accent: #64748b;
+  --accent-dark: #475569;
+  --secondary: #94a3b8;
+  --category-surface: transparent;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface-1: var(--surface-1);
+  --color-border-1: var(--border-1);
+  --color-accent: var(--accent);
+  --color-accent-dark: var(--accent-dark);
+  --color-secondary: var(--secondary);
+  --color-category-surface: var(--category-surface);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --surface-1: #18181b;
+  --border-1: #27272a;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Category motifs — decorative only, never behind body text, so contrast stays constant. */
+[data-motif="hardwood"] .motif-surface {
+  background-image: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--accent) 6%, transparent) 0px,
+    color-mix(in srgb, var(--accent) 6%, transparent) 2px,
+    transparent 2px,
+    transparent 18px
+  );
+}
+
+[data-motif="pitch"] .motif-surface {
+  border-image: repeating-linear-gradient(90deg, var(--accent) 0 10px, transparent 10px 20px) 1;
+  border-bottom-style: dashed;
+  border-bottom-width: 2px;
+}
+
+[data-motif="holo"] .motif-surface {
+  background-image: linear-gradient(
+    120deg,
+    color-mix(in srgb, var(--accent) 10%, transparent) 0%,
+    color-mix(in srgb, var(--secondary) 12%, transparent) 40%,
+    color-mix(in srgb, var(--accent) 10%, transparent) 80%
+  );
+}
+
+[data-motif="frame"] .motif-surface {
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border-1));
+  border-radius: 0.5rem;
+}
+
+/* Booth mode: larger tap targets, bigger type, for fast use at a table in bright light. */
+.booth-mode .booth-target {
+  min-height: 3.5rem;
+  font-size: 1.125rem;
+}

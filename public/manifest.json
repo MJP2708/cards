@@ -1,0 +1,12 @@
+{
+  "name": "Booth Cards — Convention Inventory & Sales",
+  "short_name": "Booth Cards",
+  "description": "Multi-category trading card inventory, research, and sales tracker for convention booths.",
+  "start_url": "/all",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#64748b",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

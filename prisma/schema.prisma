@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Card {
+  id          String    @id @default(cuid())
+  category    String // "NBA", "Football", "Pokemon", "TCG-MTG", "TCG-OnePiece", etc.
+  name        String // player name (sports) or card name (Pokemon/TCG) — used for search
+  series      String // set/expansion/series name
+  year        Int?
+  cardNumber  String?
+  cardType    String? // base/rookie/insert/auto/relic/parallel (sports) or Pokemon/Trainer/Energy/Creature/Spell (TCG)
+  rarity      String? // e.g. "/99", "1/1", "Holo Rare", "Secret Rare"
+  grade       String? // e.g. "PSA 10"
+  attributes  Json? // category-specific extra fields, e.g. { "team": "Lakers", "position": "PG" }
+  costBasis   Float
+  askingPrice Float
+  quantity    Int       @default(1)
+  status      String    @default("In Stock") // In Stock, Sold, Reserved, On Hold
+  photoFront  String?
+  photoBack   String?
+  qrCode      String?   @unique
+  packed      Boolean   @default(false) // pre-event staging checklist
+  isHot       Boolean   @default(false) // manual "hot card" flag
+  hotNote     String?
+  researchNotes String? // manual set/card background notes for the Fact Sheet panel
+  dateAdded   DateTime  @default(now())
+  dateSold    DateTime?
+  soldPrice   Float?
+  buyerNote   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sales      Sale[]
+  priceComps PriceComp[]
+
+  @@index([category, status])
+  @@index([name])
+}
+
+model Category {
+  id          String  @id @default(cuid())
+  key         String  @unique // "NBA", "Pokemon", etc.
+  displayName String
+  icon        String? // for the tab/sidebar UI
+  sortOrder   Int     @default(0)
+  fieldSchema Json // defines which attribute fields this category shows on its Add/Edit form
+  themeTokens Json // e.g. { "accent": "#F97316", "accentDark": "#C2410C", "surface": "#1C1917" }
+  isBuiltIn   Boolean @default(false)
+}
+
+model Sale {
+  id            String   @id @default(cuid())
+  cardId        String
+  card          Card     @relation(fields: [cardId], references: [id])
+  soldPrice     Float
+  paymentMethod String
+  timestamp     DateTime @default(now())
+  buyerContact  String?
+  bundleId      String?
+  bundle        Bundle?  @relation(fields: [bundleId], references: [id])
+
+  @@index([timestamp])
+  @@index([cardId])
+}
+
+model Bundle {
+  id            String   @id @default(cuid())
+  timestamp     DateTime @default(now())
+  totalPrice    Float
+  paymentMethod String
+  buyerContact  String?
+  sales         Sale[]
+}
+
+model PriceComp {
+  id        String   @id @default(cuid())
+  cardId    String
+  card      Card     @relation(fields: [cardId], references: [id])
+  source    String // "eBay", "manual", "130point", "TCGplayer", "PriceCharting"
+  price     Float
+  url       String?
+  fetchedAt DateTime @default(now())
+
+  @@index([cardId])
+}
+
+model FilterPreset {
+  id         String  @id @default(cuid())
+  name       String
+  category   String? // null = applies across "All categories"
+  filterJson Json
+  createdAt  DateTime @default(now())
+}
+
+model Settings {
+  id                    String    @id @default("singleton")
+  minMarginPct          Float     @default(20)
+  usdExchangeRate       Float?
+  exchangeRateFetchedAt DateTime?
+}
