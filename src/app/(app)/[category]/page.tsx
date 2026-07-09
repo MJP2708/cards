@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { PackagePlus, Upload, Inbox, SearchX } from "lucide-react";
+import { PackagePlus, Upload, Inbox, SearchX, LayoutGrid, Rows3 } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import { useCards } from "@/lib/data/cards";
 import { BulkActionsBar } from "@/components/cards/BulkActionsBar";
@@ -17,6 +17,10 @@ import { UsdHint } from "@/components/UsdHint";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardRowSkeleton } from "@/components/ui/Skeleton";
 import { CategoryIcon } from "@/components/icons/CategoryIcon";
+import { CardThumbnail } from "@/components/cards/CardThumbnail";
+import { CardGrid } from "@/components/cards/CardGrid";
+import { PhotoLightbox } from "@/components/cards/PhotoLightbox";
+import { useUiStore } from "@/store/uiStore";
 import type { CardDTO } from "@/lib/data/types";
 
 export default function CategoryInventoryPage() {
@@ -31,6 +35,9 @@ export default function CategoryInventoryPage() {
   const [soldCard, setSoldCard] = useState<CardDTO | null>(null);
   const [bundleCards, setBundleCards] = useState<CardDTO[] | null>(null);
   const [showImport, setShowImport] = useState(false);
+  const [photoCard, setPhotoCard] = useState<CardDTO | null>(null);
+  const listViewMode = useUiStore((s) => s.listViewMode);
+  const setListViewMode = useUiStore((s) => s.setListViewMode);
 
   const category = categories?.find((c) => c.key.toLowerCase() === params.category.toLowerCase());
   const isAll = params.category.toLowerCase() === "all";
@@ -85,6 +92,24 @@ export default function CategoryInventoryPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <div className="flex rounded-md border border-border-1 p-0.5">
+              <button
+                onClick={() => setListViewMode("table")}
+                aria-label="Table view"
+                aria-pressed={listViewMode === "table"}
+                className={`rounded px-2 py-1.5 ${listViewMode === "table" ? "bg-accent text-white" : "text-foreground/50 hover:bg-surface-1"}`}
+              >
+                <Rows3 className="h-4 w-4" />
+              </button>
+              <button
+                onClick={() => setListViewMode("grid")}
+                aria-label="Grid view"
+                aria-pressed={listViewMode === "grid"}
+                className={`rounded px-2 py-1.5 ${listViewMode === "grid" ? "bg-accent text-white" : "text-foreground/50 hover:bg-surface-1"}`}
+              >
+                <LayoutGrid className="h-4 w-4" />
+              </button>
+            </div>
             {!isAll && (
               <button
                 onClick={() => setShowImport(true)}
@@ -154,12 +179,25 @@ export default function CategoryInventoryPage() {
           />
         )}
 
-        {!isLoading && (cards?.length ?? 0) > 0 && (
+        {!isLoading && (cards?.length ?? 0) > 0 && listViewMode === "grid" && (
+          <CardGrid
+            cards={cards ?? []}
+            categories={categories}
+            isAll={isAll}
+            selectedIds={selectedIds}
+            onToggleSelect={toggleSelect}
+            onMarkSold={setSoldCard}
+            onViewPhoto={setPhotoCard}
+          />
+        )}
+
+        {!isLoading && (cards?.length ?? 0) > 0 && listViewMode === "table" && (
           <div className="overflow-x-auto rounded-lg border border-border-1">
             <table className="w-full text-sm">
               <thead className="bg-surface-1 text-left text-xs uppercase text-foreground/60">
                 <tr>
                   <th className="w-8 px-3 py-2"></th>
+                  <th className="w-12 px-3 py-2"></th>
                   {isAll && <th className="hidden px-3 py-2 sm:table-cell">Category</th>}
                   <th className="px-3 py-2">Name</th>
                   <th className="hidden px-3 py-2 md:table-cell">Series/Set</th>
@@ -177,6 +215,14 @@ export default function CategoryInventoryPage() {
                     <tr key={card.id} className="border-t border-border-1 hover:bg-surface-1">
                       <td className="px-3 py-2">
                         <input type="checkbox" checked={selectedIds.has(card.id)} onChange={() => toggleSelect(card.id)} />
+                      </td>
+                      <td className="px-3 py-2">
+                        <CardThumbnail
+                          photoFront={card.photoFront}
+                          name={card.name}
+                          themeTokens={cardCategory?.themeTokens}
+                          onClick={() => setPhotoCard(card)}
+                        />
                       </td>
                       {isAll && (
                         <td className="hidden px-3 py-2 sm:table-cell">
@@ -246,6 +292,14 @@ export default function CategoryInventoryPage() {
           />
         )}
         {showImport && category && <CsvImportDialog category={category} onClose={() => setShowImport(false)} />}
+        {photoCard && (
+          <PhotoLightbox
+            name={photoCard.name}
+            photoFront={photoCard.photoFront}
+            photoBack={photoCard.photoBack}
+            onClose={() => setPhotoCard(null)}
+          />
+        )}
       </motion.div>
     </AnimatePresence>
   );

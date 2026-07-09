@@ -4,6 +4,7 @@ import { useState } from "react";
 import { IdCard, Tag, ImagePlus } from "lucide-react";
 import type { CategoryDTO } from "@/lib/categories";
 import type { CardDTO } from "@/lib/data/types";
+import { PhotoUploadField } from "@/components/cards/PhotoUploadField";
 
 export type CardFormValues = {
   name: string;
@@ -239,15 +240,8 @@ export function CardForm({
       </FormSection>
 
       <FormSection icon={ImagePlus} title="Photos & Notes">
-        <label className="flex flex-col gap-1">
-          <span className={labelClass}>Front Photo URL</span>
-          <input className={inputClass} placeholder="https://…" value={values.photoFront} onChange={(e) => update("photoFront", e.target.value)} />
-        </label>
-
-        <label className="flex flex-col gap-1">
-          <span className={labelClass}>Back Photo URL</span>
-          <input className={inputClass} placeholder="https://…" value={values.photoBack} onChange={(e) => update("photoBack", e.target.value)} />
-        </label>
+        <PhotoUploadField label="Front Photo" value={values.photoFront} onChange={(url) => update("photoFront", url)} />
+        <PhotoUploadField label="Back Photo" value={values.photoBack} onChange={(url) => update("photoBack", url)} />
 
         <label className="flex flex-col gap-1">
           <span className={labelClass}>QR Code (optional, unique)</span>
