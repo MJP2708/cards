@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { CardThumbnail } from "@/components/cards/CardThumbnail";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { Price } from "@/components/ui/Price";
+import { Button } from "@/components/ui/Button";
 import { SwipeableRow } from "@/components/cards/SwipeableRow";
 import type { CardDTO } from "@/lib/data/types";
 import type { CategoryDTO } from "@/lib/categories";
@@ -98,12 +99,9 @@ export function CardGrid({
                   <StatusPill status={card.status} className="hidden sm:inline-flex" />
                 </div>
                 {!isSold ? (
-                  <button
-                    onClick={() => onMarkSold(card)}
-                    className="booth-target mt-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-white hover:bg-accent-dark"
-                  >
+                  <Button size="sm" booth className="mt-1 w-full" onClick={() => onMarkSold(card)}>
                     {common("markSold")}
-                  </button>
+                  </Button>
                 ) : (
                   <span className="mt-1 rounded-md bg-surface-1 px-2 py-1 text-center text-xs text-foreground/50">{common("sold")}</span>
                 )}

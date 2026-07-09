@@ -79,14 +79,32 @@ function StatTile({
   );
 }
 
-function ChartCard({ title, children, hero }: { title: string; children: React.ReactNode; hero?: boolean }) {
+function ChartCard({
+  title,
+  children,
+  hero,
+  isEmpty,
+  emptyLabel,
+}: {
+  title: string;
+  children: React.ReactNode;
+  hero?: boolean;
+  isEmpty?: boolean;
+  emptyLabel?: string;
+}) {
   return (
     <div className={`rounded-lg border border-border-1 p-4 ${hero ? "bg-[var(--accent-tint-weak)]" : ""}`}>
       <h2 className="mb-3 text-sm font-semibold text-foreground/70">{title}</h2>
       <div className={hero ? "h-80 w-full" : "h-64 w-full"}>
-        <ResponsiveContainer width="100%" height="100%">
-          {children as React.ReactElement}
-        </ResponsiveContainer>
+        {isEmpty ? (
+          <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-center">
+            <p className="text-sm text-foreground/50">{emptyLabel}</p>
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            {children as React.ReactElement}
+          </ResponsiveContainer>
+        )}
       </div>
     </div>
   );
@@ -208,7 +226,7 @@ export default function DashboardPage() {
 
       {/* Hero chart — cumulative profit is the real health signal for the
           event; it used to sit last, same size as four other charts. */}
-      <ChartCard title={t("cumulativeProfit")} hero>
+      <ChartCard title={t("cumulativeProfit")} hero isEmpty={data.profitOverTime.length === 0} emptyLabel={t("noSalesYet")}>
         <LineChart data={data.profitOverTime} margin={{ left: 4, right: 12 }}>
           <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="date" tick={{ fill: colors.text, fontSize: 12 }} axisLine={{ stroke: colors.grid }} tickLine={false} />
@@ -219,7 +237,7 @@ export default function DashboardPage() {
       </ChartCard>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <ChartCard title={t("revenueByCategory")}>
+        <ChartCard title={t("revenueByCategory")} isEmpty={data.categoryBreakdown.length === 0} emptyLabel={t("noSalesYet")}>
           <BarChart data={data.categoryBreakdown} margin={{ left: 4, right: 12 }}>
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="category" tick={{ fill: colors.text, fontSize: 12 }} axisLine={{ stroke: colors.grid }} tickLine={false} />
@@ -229,7 +247,7 @@ export default function DashboardPage() {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title={t("profitByCategory")}>
+        <ChartCard title={t("profitByCategory")} isEmpty={data.categoryBreakdown.length === 0} emptyLabel={t("noSalesYet")}>
           <BarChart data={data.categoryBreakdown} margin={{ left: 4, right: 12 }}>
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="category" tick={{ fill: colors.text, fontSize: 12 }} axisLine={{ stroke: colors.grid }} tickLine={false} />
@@ -239,7 +257,7 @@ export default function DashboardPage() {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title={t("topSelling")}>
+        <ChartCard title={t("topSelling")} isEmpty={data.topSelling.length === 0} emptyLabel={t("noSalesYet")}>
           <BarChart data={data.topSelling} layout="vertical" margin={{ left: 12, right: 12 }}>
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tick={{ fill: colors.text, fontSize: 12 }} axisLine={false} tickLine={false} />
@@ -256,7 +274,7 @@ export default function DashboardPage() {
           </BarChart>
         </ChartCard>
 
-        <ChartCard title={t("cardTypePerformance")}>
+        <ChartCard title={t("cardTypePerformance")} isEmpty={data.cardTypePerformance.length === 0} emptyLabel={t("noSalesYet")}>
           <BarChart data={data.cardTypePerformance} layout="vertical" margin={{ left: 12, right: 12 }}>
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" horizontal={false} />
             <XAxis type="number" tick={{ fill: colors.text, fontSize: 12 }} axisLine={false} tickLine={false} />

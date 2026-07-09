@@ -7,6 +7,7 @@ import type { CategoryDTO } from "@/lib/categories";
 import type { CardDTO } from "@/lib/data/types";
 import { PhotoUploadField } from "@/components/cards/PhotoUploadField";
 import { InlineError } from "@/components/ui/InlineError";
+import { Button } from "@/components/ui/Button";
 import { STATUS_VALUES, useStatusLabel } from "@/lib/statusLabels";
 import { fieldLabelKey } from "@/lib/fieldLabels";
 import { useCards } from "@/lib/data/cards";
@@ -394,23 +395,29 @@ export function CardForm({
           the (often-skipped) photos section — always one thumb-reach away. */}
       <div className="sticky bottom-0 -mx-4 flex gap-2 border-t border-border-1 bg-background px-4 py-3 pb-safe md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
         {allowAddSimilar && (
-          <button
+          <Button
             type="button"
-            onClick={handleAddSimilar}
+            variant="secondary"
+            booth
+            icon={ArrowRight}
+            loading={submitting === "similar"}
             disabled={submitting !== null}
-            className="booth-target flex flex-1 items-center justify-center gap-1.5 rounded-md border border-accent px-4 py-2 text-sm font-medium text-accent hover:bg-[var(--accent-tint-weak)] disabled:opacity-50 md:flex-none"
+            onClick={handleAddSimilar}
+            className="flex-1 border-accent text-accent hover:bg-[var(--accent-tint-weak)] md:flex-none"
           >
-            <ArrowRight className="h-4 w-4" />
             {submitting === "similar" ? t("saving") : t("saveAndAddSimilar")}
-          </button>
+          </Button>
         )}
-        <button
+        <Button
           type="submit"
+          variant="primary"
+          booth
+          loading={submitting === "save"}
           disabled={submitting !== null}
-          className="booth-target flex-1 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50 md:flex-none"
+          className="flex-1 md:flex-none"
         >
-          {submitting === "save" ? t("saving") : submitLabel}
-        </button>
+          {submitLabel}
+        </Button>
       </div>
     </form>
   );

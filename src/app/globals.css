@@ -3,11 +3,56 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  /* ---- Neutral ramp — the backbone of every surface, border, and text tier.
+     Existing tokens (--background, --foreground, --surface-1, --surface-2,
+     --border-1, used all over the component tree already) now point at
+     specific steps of this ramp instead of one-off hex values, so the whole
+     app reads off one scale. */
+  --neutral-50: #f8fafc;
+  --neutral-100: #f1f5f9;
+  --neutral-200: #e2e8f0;
+  --neutral-300: #cbd5e1;
+  --neutral-400: #94a3b8;
+  --neutral-500: #64748b;
+  --neutral-600: #475569;
+  --neutral-700: #334155;
+  --neutral-800: #1e293b;
+  --neutral-900: #0f172a;
+
+  /* ---- Semantic status ramps. Kept separate from --accent (which is
+     per-category) so "success/warning/danger/info" always read the same
+     regardless of whether the active category is NBA or Football. */
+  --success-50: #ecfdf5; --success-100: #d1fae5; --success-200: #a7f3d0; --success-300: #6ee7b7; --success-400: #34d399;
+  --success-500: #10b981; --success-600: #059669; --success-700: #047857; --success-800: #065f46; --success-900: #064e3b;
+
+  --warning-50: #fffbeb; --warning-100: #fef3c7; --warning-200: #fde68a; --warning-300: #fcd34d; --warning-400: #fbbf24;
+  --warning-500: #f59e0b; --warning-600: #d97706; --warning-700: #b45309; --warning-800: #92400e; --warning-900: #78350f;
+
+  --danger-50: #fef2f2; --danger-100: #fee2e2; --danger-200: #fecaca; --danger-300: #fca5a5; --danger-400: #f87171;
+  --danger-500: #ef4444; --danger-600: #dc2626; --danger-700: #b91c1c; --danger-800: #991b1b; --danger-900: #7f1d1d;
+
+  --info-50: #eff6ff; --info-100: #dbeafe; --info-200: #bfdbfe; --info-300: #93c5fd; --info-400: #60a5fa;
+  --info-500: #3b82f6; --info-600: #2563eb; --info-700: #1d4ed8; --info-800: #1e40af; --info-900: #1e3a8a;
+
+  /* ---- Semantic surface/text aliases (the vocabulary components should
+     reach for) — light mode reads directly off the neutral ramp above. */
   --background: #ffffff;
-  --foreground: #171717;
-  --surface-1: #f8fafc;
-  --surface-2: #f1f5f9;
-  --border-1: #e2e8f0;
+  --card: #ffffff;
+  --surface: var(--neutral-50);
+  --surface-hover: var(--neutral-100);
+  --surface-elevated: #ffffff;
+  --border: var(--neutral-200);
+  --border-muted: var(--neutral-100);
+  --text-primary: var(--neutral-900);
+  --text-secondary: var(--neutral-600);
+  --text-muted: var(--neutral-400);
+
+  /* Back-compat names — every existing component reads these; kept as plain
+     aliases onto the semantic tokens above rather than rewritten en masse. */
+  --foreground: var(--text-primary);
+  --surface-1: var(--surface);
+  --surface-2: var(--surface-hover);
+  --border-1: var(--border);
 
   /* Category theme tokens — overwritten at runtime by ThemeEffect based on the active category. */
   --accent: #64748b;
@@ -24,16 +69,15 @@
   --accent-tint-strong: color-mix(in srgb, var(--accent) 14%, var(--surface-1));
   --accent-tint-border: color-mix(in srgb, var(--accent) 35%, var(--border-1));
 
-  /* Status semantics — deliberately separate from the accent hue (which is
-     per-category) so status always reads the same regardless of NBA/Football. */
-  --status-instock: #16a34a;
-  --status-instock-tint: #f0fdf4;
-  --status-reserved: #d97706;
-  --status-reserved-tint: #fffbeb;
+  /* Status semantics — built on the success/warning/info ramps above. */
+  --status-instock: var(--success-600);
+  --status-instock-tint: var(--success-50);
+  --status-reserved: var(--warning-600);
+  --status-reserved-tint: var(--warning-50);
   --status-hold: #7c3aed;
   --status-hold-tint: #f5f3ff;
-  --status-sold: #64748b;
-  --status-sold-tint: #f1f5f9;
+  --status-sold: var(--neutral-500);
+  --status-sold-tint: var(--neutral-100);
 
   /* Elevation — two steps, used sparingly (sticky bars, dialogs, popovers). */
   --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
@@ -43,9 +87,18 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-surface-elevated: var(--surface-elevated);
   --color-surface-1: var(--surface-1);
   --color-surface-2: var(--surface-2);
+  --color-border: var(--border);
+  --color-border-muted: var(--border-muted);
   --color-border-1: var(--border-1);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
   --color-accent: var(--accent);
   --color-accent-dark: var(--accent-dark);
   --color-secondary: var(--secondary);
@@ -54,6 +107,10 @@
   --color-status-reserved: var(--status-reserved);
   --color-status-hold: var(--status-hold);
   --color-status-sold: var(--status-sold);
+  --color-success: var(--success-600);
+  --color-warning: var(--warning-600);
+  --color-danger: var(--danger-600);
+  --color-info: var(--info-600);
   --font-sans: var(--font-body);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-display);
@@ -78,11 +135,26 @@
 }
 
 .dark {
+  /* Overriding the source semantic tokens (not the --foreground/--surface-1/
+     --border-1 back-compat names) so every alias defined in :root — old name
+     or new — resolves correctly against the live cascade. */
   --background: #0a0a0a;
-  --foreground: #ededed;
-  --surface-1: #18181b;
-  --surface-2: #232326;
-  --border-1: #27272a;
+  --card: #111113;
+  --surface: #18181b;
+  --surface-hover: #232326;
+  --surface-elevated: #1f1f23;
+  --border: #27272a;
+  --border-muted: #1f1f22;
+  --text-primary: #ededed;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+
+  /* Lightened a step from their light-mode values so success/warning/danger/info
+     keep working contrast against a near-black background. */
+  --success-600: #22c55e;
+  --warning-600: #fbbf24;
+  --danger-600: #f87171;
+  --info-600: #60a5fa;
 
   --status-instock: #4ade80;
   --status-instock-tint: #0f2417;
@@ -239,10 +311,4 @@ button:not(:disabled):active, a[role="button"]:not(:disabled):active {
    respects the iOS home-indicator safe area. */
 .pb-safe {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px));
-}
-.mobile-nav-spacer {
-  height: calc(4rem + env(safe-area-inset-bottom, 0px));
-}
-@media (min-width: 768px) {
-  .mobile-nav-spacer { display: none; }
 }

@@ -16,6 +16,8 @@ import { CsvImportDialog } from "@/components/cards/CsvImportDialog";
 import { FilterChipBar, type ChipFilters } from "@/components/cards/FilterChipBar";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { Price } from "@/components/ui/Price";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardRowSkeleton } from "@/components/ui/Skeleton";
 import { CategoryIcon } from "@/components/icons/CategoryIcon";
@@ -109,9 +111,9 @@ function InventoryRow({
           {card.name}
         </Link>
         {card.isHot && (
-          <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
+          <Badge tone="danger" className="ml-2">
             {t("hotBadge")}
-          </span>
+          </Badge>
         )}
         {/* Series + status ride along under the name below `md`, since those columns hide there. */}
         <div className="flex items-center gap-1.5 md:hidden">
@@ -131,12 +133,9 @@ function InventoryRow({
       </td>
       <td className="px-3 py-2 text-right">
         {card.status !== "Sold" && (
-          <button
-            onClick={() => onMarkSold(card)}
-            className="booth-target rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-white hover:bg-accent-dark"
-          >
+          <Button size="sm" booth onClick={() => onMarkSold(card)}>
             {common("markSold")}
-          </button>
+          </Button>
         )}
       </td>
     </tr>

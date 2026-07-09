@@ -12,6 +12,7 @@ import { MarkSoldDialog } from "@/components/cards/MarkSoldDialog";
 import { FactSheetPanel } from "@/components/cards/FactSheetPanel";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StatusPill } from "@/components/ui/StatusPill";
+import { Button } from "@/components/ui/Button";
 import { actionWithUndo } from "@/lib/undoToast";
 
 export default function CardDetailPage() {
@@ -65,12 +66,9 @@ export default function CardDetailPage() {
             apart rather than sitting at equal weight beside it. */}
         <div className="flex items-center gap-2">
           {card.status !== "Sold" && (
-            <button
-              onClick={() => setShowSoldDialog(true)}
-              className="booth-target rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
-            >
+            <Button booth onClick={() => setShowSoldDialog(true)}>
               {common("markSold")}
-            </button>
+            </Button>
           )}
           <Link
             href={`/label/${card.id}`}
@@ -81,18 +79,19 @@ export default function CardDetailPage() {
             <Printer className="h-4 w-4" aria-hidden />
             <span className="hidden sm:inline">{t("printQrLabel")}</span>
           </Link>
-          <button
+          <Button
+            booth
+            variant="destructive"
+            aria-label={common("delete")}
             onClick={() => {
               actionWithUndo(t("cardDeleted", { name: card.name }), () => {
                 deleteCard.mutate(card.id);
               });
               router.push(`/${category.key.toLowerCase()}`);
             }}
-            aria-label={common("delete")}
-            className="booth-target flex items-center justify-center rounded-md px-3 py-2 text-foreground/40 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
           >
             <Trash2 className="h-4 w-4" aria-hidden />
-          </button>
+          </Button>
         </div>
       </div>
 
