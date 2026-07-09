@@ -12,5 +12,8 @@
   "groupGoTo": "Go to",
   "salesReports": "Sales Reports",
   "preEventChecklist": "Pre-Event Checklist",
-  "scanQr": "Scan QR"
+  "scanQr": "Scan QR",
+  "inventory": "Inventory",
+  "more": "More",
+  "mobileNavLabel": "Main navigation"
 }

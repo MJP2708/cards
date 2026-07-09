@@ -29,5 +29,10 @@
   "addCardTitle": "เพิ่มการ์ด {category}",
   "chooseCategory": "เลือกหมวดหมู่ที่ต้องการเพิ่มการ์ด:",
   "createFailed": "สร้างการ์ดไม่สำเร็จ",
-  "saveFailed": "บันทึกไม่สำเร็จ"
+  "saveFailed": "บันทึกไม่สำเร็จ",
+  "profitLabel": "กำไร",
+  "decreaseQuantity": "ลดจำนวน",
+  "increaseQuantity": "เพิ่มจำนวน",
+  "saveAndAddSimilar": "บันทึกและเพิ่มใบถัดไป",
+  "saving": "กำลังบันทึก…"
 }

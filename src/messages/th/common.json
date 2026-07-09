@@ -25,5 +25,7 @@
   "moreOptions": "ตัวเลือกเพิ่มเติม",
   "categorySwitcherLabel": "ตัวสลับหมวดหมู่",
   "printLabel": "พิมพ์ป้าย",
-  "qrCodeAlt": "คิวอาร์โค้ดของ {name}"
+  "qrCodeAlt": "คิวอาร์โค้ดของ {name}",
+  "close": "ปิด",
+  "tapToClose": "แตะเพื่อปิด"
 }

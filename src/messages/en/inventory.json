@@ -39,7 +39,9 @@
   "chipMin": "Min ฿{amount}",
   "chipMax": "Max ฿{amount}",
   "presets": "Presets",
-  "savePreset": "+ Save current filters",
+  "savedFilters": "Saved",
+  "noSavedFilters": "No saved filters yet.",
+  "savePreset": "Save current filters",
   "presetName": "Preset name",
   "deletePreset": "Delete preset {name}",
   "sellBundle": "Sell as Bundle",
@@ -51,5 +53,7 @@
   "selected": "{count} selected",
   "clear": "Clear",
   "confirmDeleteMany": "Delete {count} cards? This cannot be undone.",
-  "cardsDeleted": "{count, plural, one {# card deleted} other {# cards deleted}}"
+  "cardsDeleted": "{count, plural, one {# card deleted} other {# cards deleted}}",
+  "swipeToSell": "Sell",
+  "swipeToSelect": "Select"
 }

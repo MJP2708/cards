@@ -39,7 +39,9 @@
   "chipMin": "ต่ำสุด ฿{amount}",
   "chipMax": "สูงสุด ฿{amount}",
   "presets": "ชุดตัวกรอง",
-  "savePreset": "+ บันทึกตัวกรองปัจจุบัน",
+  "savedFilters": "บันทึกไว้",
+  "noSavedFilters": "ยังไม่มีตัวกรองที่บันทึกไว้",
+  "savePreset": "บันทึกตัวกรองปัจจุบัน",
   "presetName": "ชื่อชุดตัวกรอง",
   "deletePreset": "ลบชุดตัวกรอง {name}",
   "sellBundle": "ขายเป็นชุด",
@@ -51,5 +53,7 @@
   "selected": "เลือกแล้ว {count} รายการ",
   "clear": "ล้างการเลือก",
   "confirmDeleteMany": "ลบการ์ด {count} ใบ? การกระทำนี้ไม่สามารถย้อนกลับได้",
-  "cardsDeleted": "ลบการ์ด {count} ใบแล้ว"
+  "cardsDeleted": "ลบการ์ด {count} ใบแล้ว",
+  "swipeToSell": "ขาย",
+  "swipeToSelect": "เลือก"
 }

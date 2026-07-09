@@ -10,6 +10,8 @@
   "updatedAgo": "อัปเดต {time}",
   "refreshStats": "รีเฟรชสถิติ",
   "refreshing": "กำลังรีเฟรช…",
+  "askingPriceLabel": "ราคาที่ตั้งขาย",
+  "moreDetails": "รายละเอียดเพิ่มเติม",
   "whyPricedHigh": "ทำไมราคาถึงสูง?",
   "priceHistory": "ประวัติราคา",
   "comps": "ราคาเปรียบเทียบ",

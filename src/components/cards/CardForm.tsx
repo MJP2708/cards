@@ -1,13 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { IdCard, Tag, ImagePlus } from "lucide-react";
+import { IdCard, Tag, ImagePlus, Minus, Plus, ArrowRight } from "lucide-react";
 import type { CategoryDTO } from "@/lib/categories";
 import type { CardDTO } from "@/lib/data/types";
 import { PhotoUploadField } from "@/components/cards/PhotoUploadField";
+import { InlineError } from "@/components/ui/InlineError";
 import { STATUS_VALUES, useStatusLabel } from "@/lib/statusLabels";
 import { fieldLabelKey } from "@/lib/fieldLabels";
+import { useCards } from "@/lib/data/cards";
 
 export type CardFormValues = {
   name: string;
@@ -80,6 +82,15 @@ const inputClass =
   "w-full rounded-md border border-border-1 bg-background px-3 py-2 text-sm outline-none focus:border-accent";
 const labelClass = "text-xs font-medium text-foreground/70";
 
+function RequiredMark() {
+  return (
+    <span className="text-red-500" aria-hidden>
+      {" "}
+      *
+    </span>
+  );
+}
+
 function FormSection({
   icon: Icon,
   title,
@@ -106,16 +117,41 @@ export function CardForm({
   onSubmit,
   submitLabel,
   errors,
+  allowAddSimilar = false,
 }: {
   category: CategoryDTO;
   initial: CardFormValues;
-  onSubmit: (values: CardFormValues) => void;
+  // Returns whether the submit succeeded — "Save & Add Similar" only clears
+  // the form and refocuses Name when it did, otherwise the failed values
+  // (and the error banner) stay exactly as the dealer left them.
+  onSubmit: (values: CardFormValues, mode: "save" | "similar") => boolean | Promise<boolean>;
   submitLabel: string;
   errors?: string[];
+  allowAddSimilar?: boolean;
 }) {
   const t = useTranslations("cardForm");
   const statusLabel = useStatusLabel();
   const [values, setValues] = useState(initial);
+  const formRef = useRef<HTMLFormElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const [submitting, setSubmitting] = useState<"save" | "similar" | null>(null);
+
+  // Sourced from the dealer's own existing inventory in this category — no
+  // new data model, just distinct values already sitting in cards they've
+  // entered, offered as <datalist> suggestions so repeated set/team names
+  // don't get retyped from scratch on every card.
+  const { data: existingCards } = useCards({ category: category.key });
+  const seriesSuggestions = useMemo(
+    () => Array.from(new Set((existingCards ?? []).map((c) => c.series).filter(Boolean))).slice(0, 50),
+    [existingCards]
+  );
+  const teamSuggestions = useMemo(
+    () =>
+      Array.from(
+        new Set((existingCards ?? []).map((c) => (c.attributes?.team as string | undefined) ?? "").filter(Boolean))
+      ).slice(0, 50),
+    [existingCards]
+  );
 
   function update<K extends keyof CardFormValues>(key: K, value: CardFormValues[K]) {
     setValues((v) => ({ ...v, [key]: value }));
@@ -134,31 +170,71 @@ export function CardForm({
     return translationKey ? t(translationKey) : dbLabel;
   }
 
+  const costBasis = Number(values.costBasis);
+  const askingPrice = Number(values.askingPrice);
+  const hasMargin = values.costBasis !== "" && values.askingPrice !== "" && !Number.isNaN(costBasis) && !Number.isNaN(askingPrice);
+  const profit = askingPrice - costBasis;
+  const marginPct = costBasis > 0 ? (profit / costBasis) * 100 : 0;
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting("save");
+    try {
+      await onSubmit(values, "save");
+    } finally {
+      setSubmitting(null);
+    }
+  }
+
+  async function handleAddSimilar() {
+    if (!formRef.current?.reportValidity()) return;
+    setSubmitting("similar");
+    try {
+      const ok = await onSubmit(values, "similar");
+      if (ok) {
+        setValues((v) => ({ ...v, name: "", cardNumber: "", photoFront: "", photoBack: "", qrCode: "" }));
+        nameInputRef.current?.focus();
+      }
+    } finally {
+      setSubmitting(null);
+    }
+  }
+
+  function stepQuantity(delta: number) {
+    const next = Math.max(1, (Number(values.quantity) || 1) + delta);
+    update("quantity", String(next));
+  }
+
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        onSubmit(values);
-      }}
-      className="max-w-2xl space-y-5"
-    >
-      {errors && errors.length > 0 && (
-        <div className="rounded-md border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300">
-          {errors.map((e) => (
-            <div key={e}>{e}</div>
-          ))}
-        </div>
-      )}
+    <form ref={formRef} onSubmit={handleSave} className="max-w-2xl space-y-5 pb-24 md:pb-0">
+      {errors && errors.length > 0 && <InlineError message={errors.join(" ")} />}
 
       <FormSection icon={IdCard} title={t("sectionIdentity")}>
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>{t("fieldName")}</span>
-          <input required autoFocus className={inputClass} value={values.name} onChange={(e) => update("name", e.target.value)} />
+          <span className={labelClass}>
+            {t("fieldName")}
+            <RequiredMark />
+          </span>
+          <input ref={nameInputRef} required autoFocus className={inputClass} value={values.name} onChange={(e) => update("name", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>{t("fieldSeriesSet")}</span>
-          <input required className={inputClass} value={values.series} onChange={(e) => update("series", e.target.value)} />
+          <span className={labelClass}>
+            {t("fieldSeriesSet")}
+            <RequiredMark />
+          </span>
+          <input
+            required
+            list="series-suggestions"
+            className={inputClass}
+            value={values.series}
+            onChange={(e) => update("series", e.target.value)}
+          />
+          <datalist id="series-suggestions">
+            {seriesSuggestions.map((s) => (
+              <option key={s} value={s} />
+            ))}
+          </datalist>
         </label>
 
         <label className="flex flex-col gap-1">
@@ -188,54 +264,103 @@ export function CardForm({
 
         {category.fieldSchema
           .filter((f) => f.kind === "attribute")
-          .map((field) => (
-            <label key={field.key} className="flex flex-col gap-1">
-              <span className={labelClass}>
-                {labelFor(field.key, field.label)}
-                {field.required && " *"}
-              </span>
-              {field.type === "select" ? (
-                <select
-                  required={field.required}
-                  className={inputClass}
-                  value={values.attributes[field.key] ?? ""}
-                  onChange={(e) => updateAttribute(field.key, e.target.value)}
-                >
-                  <option value="" disabled>
-                    {t("selectPlaceholder")}
-                  </option>
-                  {field.options?.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
+          .map((field) => {
+            const isTeamField = field.key === "team";
+            return (
+              <label key={field.key} className="flex flex-col gap-1">
+                <span className={labelClass}>
+                  {labelFor(field.key, field.label)}
+                  {field.required && <RequiredMark />}
+                </span>
+                {field.type === "select" ? (
+                  <select
+                    required={field.required}
+                    className={inputClass}
+                    value={values.attributes[field.key] ?? ""}
+                    onChange={(e) => updateAttribute(field.key, e.target.value)}
+                  >
+                    <option value="" disabled>
+                      {t("selectPlaceholder")}
                     </option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  required={field.required}
-                  className={inputClass}
-                  value={values.attributes[field.key] ?? ""}
-                  onChange={(e) => updateAttribute(field.key, e.target.value)}
-                />
-              )}
-            </label>
-          ))}
+                    {field.options?.map((opt) => (
+                      <option key={opt} value={opt}>
+                        {opt}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <>
+                    <input
+                      required={field.required}
+                      list={isTeamField ? "team-suggestions" : undefined}
+                      className={inputClass}
+                      value={values.attributes[field.key] ?? ""}
+                      onChange={(e) => updateAttribute(field.key, e.target.value)}
+                    />
+                    {isTeamField && (
+                      <datalist id="team-suggestions">
+                        {teamSuggestions.map((v) => (
+                          <option key={v} value={v} />
+                        ))}
+                      </datalist>
+                    )}
+                  </>
+                )}
+              </label>
+            );
+          })}
       </FormSection>
 
       <FormSection icon={Tag} title={t("sectionPricingStatus")}>
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>{t("fieldCostBasis")}</span>
+          <span className={labelClass}>
+            {t("fieldCostBasis")}
+            <RequiredMark />
+          </span>
           <input required type="number" step="0.01" className={inputClass} value={values.costBasis} onChange={(e) => update("costBasis", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>{t("fieldAskingPrice")}</span>
+          <span className={labelClass}>
+            {t("fieldAskingPrice")}
+            <RequiredMark />
+          </span>
           <input required type="number" step="0.01" className={inputClass} value={values.askingPrice} onChange={(e) => update("askingPrice", e.target.value)} />
+          {hasMargin && (
+            <span className={`text-xs ${profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+              {profit >= 0 ? "→ +" : "→ "}฿{profit.toLocaleString()} {t("profitLabel")} ({marginPct.toFixed(0)}%)
+            </span>
+          )}
         </label>
 
         <label className="flex flex-col gap-1">
           <span className={labelClass}>{t("fieldQuantity")}</span>
-          <input required type="number" min="1" className={inputClass} value={values.quantity} onChange={(e) => update("quantity", e.target.value)} />
+          <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => stepQuantity(-1)}
+              aria-label={t("decreaseQuantity")}
+              className="tap-compact flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-1 hover:bg-surface-1"
+            >
+              <Minus className="h-3.5 w-3.5" />
+            </button>
+            <input
+              required
+              type="number"
+              min="1"
+              className={`${inputClass} text-center`}
+              value={values.quantity}
+              onChange={(e) => update("quantity", e.target.value)}
+            />
+            <button
+              type="button"
+              onClick={() => stepQuantity(1)}
+              aria-label={t("increaseQuantity")}
+              className="tap-compact flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-border-1 hover:bg-surface-1"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </label>
 
         <label className="flex flex-col gap-1">
@@ -265,12 +390,28 @@ export function CardForm({
         </label>
       </FormSection>
 
-      <button
-        type="submit"
-        className="booth-target rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
-      >
-        {submitLabel}
-      </button>
+      {/* Sticky on mobile so submitting never requires scrolling back up past
+          the (often-skipped) photos section — always one thumb-reach away. */}
+      <div className="sticky bottom-0 -mx-4 flex gap-2 border-t border-border-1 bg-background px-4 py-3 pb-safe md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
+        {allowAddSimilar && (
+          <button
+            type="button"
+            onClick={handleAddSimilar}
+            disabled={submitting !== null}
+            className="booth-target flex flex-1 items-center justify-center gap-1.5 rounded-md border border-accent px-4 py-2 text-sm font-medium text-accent hover:bg-[var(--accent-tint-weak)] disabled:opacity-50 md:flex-none"
+          >
+            <ArrowRight className="h-4 w-4" />
+            {submitting === "similar" ? t("saving") : t("saveAndAddSimilar")}
+          </button>
+        )}
+        <button
+          type="submit"
+          disabled={submitting !== null}
+          className="booth-target flex-1 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50 md:flex-none"
+        >
+          {submitting === "save" ? t("saving") : submitLabel}
+        </button>
+      </div>
     </form>
   );
 }

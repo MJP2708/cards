@@ -12,5 +12,8 @@
   "groupGoTo": "ไปที่",
   "salesReports": "รายงานการขาย",
   "preEventChecklist": "เช็คลิสต์ก่อนวันงาน",
-  "scanQr": "สแกนคิวอาร์โค้ด"
+  "scanQr": "สแกนคิวอาร์โค้ด",
+  "inventory": "คลังการ์ด",
+  "more": "เพิ่มเติม",
+  "mobileNavLabel": "เมนูหลัก"
 }

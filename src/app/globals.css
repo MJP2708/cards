@@ -6,6 +6,7 @@
   --background: #ffffff;
   --foreground: #171717;
   --surface-1: #f8fafc;
+  --surface-2: #f1f5f9;
   --border-1: #e2e8f0;
 
   /* Category theme tokens — overwritten at runtime by ThemeEffect based on the active category. */
@@ -15,17 +16,44 @@
   --category-surface: transparent;
   --font-display: var(--font-geist-sans);
   --font-body: var(--font-geist-sans); /* swapped to Noto Sans Thai for the Thai locale by ThemeEffect */
+
+  /* One "tinted accent surface" token, reused everywhere instead of each component
+     picking its own color-mix() percentage (empty-state icon wells, stat tiles,
+     filter chips previously used 8/14/14% independently). */
+  --accent-tint-weak: color-mix(in srgb, var(--accent) 8%, var(--background));
+  --accent-tint-strong: color-mix(in srgb, var(--accent) 14%, var(--surface-1));
+  --accent-tint-border: color-mix(in srgb, var(--accent) 35%, var(--border-1));
+
+  /* Status semantics — deliberately separate from the accent hue (which is
+     per-category) so status always reads the same regardless of NBA/Football. */
+  --status-instock: #16a34a;
+  --status-instock-tint: #f0fdf4;
+  --status-reserved: #d97706;
+  --status-reserved-tint: #fffbeb;
+  --status-hold: #7c3aed;
+  --status-hold-tint: #f5f3ff;
+  --status-sold: #64748b;
+  --status-sold-tint: #f1f5f9;
+
+  /* Elevation — two steps, used sparingly (sticky bars, dialogs, popovers). */
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 16px -4px rgba(15, 23, 42, 0.16), 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface-1: var(--surface-1);
+  --color-surface-2: var(--surface-2);
   --color-border-1: var(--border-1);
   --color-accent: var(--accent);
   --color-accent-dark: var(--accent-dark);
   --color-secondary: var(--secondary);
   --color-category-surface: var(--category-surface);
+  --color-status-instock: var(--status-instock);
+  --color-status-reserved: var(--status-reserved);
+  --color-status-hold: var(--status-hold);
+  --color-status-sold: var(--status-sold);
   --font-sans: var(--font-body);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-display);
@@ -38,13 +66,35 @@
   --text-display-md--line-height: 1.15;
   --text-display-lg: 2.5rem;
   --text-display-lg--line-height: 1.08;
+
+  /* Price scale — the one figure on every screen that should never be mistaken
+     for metadata. Used by the shared <Price> component only. */
+  --text-price-sm: 0.9375rem;
+  --text-price-sm--font-weight: 600;
+  --text-price-md: 1.125rem;
+  --text-price-md--font-weight: 600;
+  --text-price-lg: 1.75rem;
+  --text-price-lg--font-weight: 700;
 }
 
 .dark {
   --background: #0a0a0a;
   --foreground: #ededed;
   --surface-1: #18181b;
+  --surface-2: #232326;
   --border-1: #27272a;
+
+  --status-instock: #4ade80;
+  --status-instock-tint: #0f2417;
+  --status-reserved: #fbbf24;
+  --status-reserved-tint: #271d0a;
+  --status-hold: #a78bfa;
+  --status-hold-tint: #211a33;
+  --status-sold: #9ca3af;
+  --status-sold-tint: #232326;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 20px -4px rgba(0, 0, 0, 0.55), 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
 /* Server-rendered so there's no flash of the Latin body font before the
@@ -162,4 +212,37 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
   }
+}
+
+/* Keyboard/screen-magnifier focus — one visible ring app-wide, so no control
+   can lose its focus indicator to a component-level `outline-none`. Components
+   that need a different visible treatment can override :focus-visible directly;
+   nothing should ever land on plain `outline: none` with nothing to replace it. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Immediate tap/press feedback — a plain CSS :active state fires on touch
+   (unlike :hover), so every button in the app confirms a tap registered even
+   before its resulting state change appears. Motion-driven components layer
+   their own whileTap on top; this is the universal floor. */
+button:not(:disabled), a[role="button"]:not(:disabled) {
+  transition: transform 0.1s ease;
+}
+button:not(:disabled):active, a[role="button"]:not(:disabled):active {
+  transform: scale(0.97);
+}
+
+/* Bottom tab bar spacing: keeps content clear of the fixed nav on mobile and
+   respects the iOS home-indicator safe area. */
+.pb-safe {
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px));
+}
+.mobile-nav-spacer {
+  height: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 768px) {
+  .mobile-nav-spacer { display: none; }
 }

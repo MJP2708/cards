@@ -174,6 +174,18 @@ type MarkSoldInput = {
   buyerNote?: string;
 };
 
+function applySoldToCard(card: CardDTO, input: MarkSoldInput): CardDTO {
+  const quantitySold = input.quantitySold ?? 1;
+  const remaining = Math.max(0, card.quantity - quantitySold);
+  return {
+    ...card,
+    quantity: remaining,
+    ...(remaining <= 0
+      ? { status: "Sold" as const, dateSold: new Date().toISOString(), soldPrice: input.soldPrice }
+      : {}),
+  };
+}
+
 export function useMarkSold() {
   const qc = useQueryClient();
   return useMutation({
@@ -184,17 +196,7 @@ export function useMarkSold() {
         if (!offlineDb || !isNetworkError(err)) throw err;
 
         const card = await offlineDb.cards.get(input.cardId);
-        if (card) {
-          const quantitySold = input.quantitySold ?? 1;
-          const remaining = Math.max(0, card.quantity - quantitySold);
-          await offlineDb.cards.put({
-            ...card,
-            quantity: remaining,
-            ...(remaining <= 0
-              ? { status: "Sold" as const, dateSold: new Date().toISOString(), soldPrice: input.soldPrice }
-              : {}),
-          });
-        }
+        if (card) await offlineDb.cards.put(applySoldToCard(card, input));
         await offlineDb.pendingMutations.add({
           kind: "markSold",
           cardId: input.cardId,
@@ -204,9 +206,25 @@ export function useMarkSold() {
         return { queued: true };
       }
     },
-    onSuccess: () => {
+    // Weak booth wifi means a real network round-trip before the row updates —
+    // update every cached card list immediately (rolled back on failure) so
+    // the sale feels instant regardless of connection quality.
+    onMutate: async (input) => {
+      await qc.cancelQueries({ queryKey: ["cards"] });
+      const previous = qc.getQueriesData<CardDTO[]>({ queryKey: ["cards"] });
+      qc.setQueriesData<CardDTO[]>({ queryKey: ["cards"] }, (old) =>
+        old?.map((c) => (c.id === input.cardId ? applySoldToCard(c, input) : c))
+      );
+      return { previous };
+    },
+    onError: (_err, _input, context) => {
+      context?.previous?.forEach(([key, data]) => qc.setQueryData(key, data));
+    },
+    onSuccess: (_data, variables) => {
       qc.invalidateQueries({ queryKey: ["cards"] });
+      qc.invalidateQueries({ queryKey: ["card", variables.cardId] });
       qc.invalidateQueries({ queryKey: ["sales"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
     },
   });
 }

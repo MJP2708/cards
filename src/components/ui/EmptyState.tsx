@@ -18,7 +18,7 @@ export function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-border-1 px-6 py-14 text-center">
-      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--accent)_14%,var(--surface-1))]">
+      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--accent-tint-strong)]">
         <Icon className="h-6 w-6" style={{ color: "var(--accent)" }} aria-hidden />
       </div>
       <p className="font-display text-base font-semibold">{title}</p>

@@ -11,5 +11,10 @@
   "cumulativeProfit": "กำไรสะสมตลอดงาน",
   "tooltipRevenue": "รายได้",
   "tooltipProfit": "กำไร",
-  "tooltipCumulativeProfit": "กำไรสะสม"
+  "tooltipCumulativeProfit": "กำไรสะสม",
+  "trendNew": "ใหม่",
+  "trendVsYesterday": "{pct} เทียบกับเมื่อวาน",
+  "todaysPriorities": "สิ่งที่ควรทำวันนี้",
+  "priorityStaleComps": "มาแรง ควรเช็คราคาใหม่",
+  "priorityDaysInStock": "อยู่ในสต็อก {days} วัน"
 }

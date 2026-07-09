@@ -4,18 +4,18 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { PackagePlus, Upload, Inbox, SearchX, LayoutGrid, Rows3 } from "lucide-react";
+import { PackagePlus, Upload, Inbox, SearchX, LayoutGrid, Rows3, Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
-import { useStatusLabel } from "@/lib/statusLabels";
 import { useCards } from "@/lib/data/cards";
+import { useLongPress } from "@/hooks/useLongPress";
 import { BulkActionsBar } from "@/components/cards/BulkActionsBar";
 import { MarkSoldDialog } from "@/components/cards/MarkSoldDialog";
 import { BundleSaleDialog } from "@/components/cards/BundleSaleDialog";
 import { CsvImportDialog } from "@/components/cards/CsvImportDialog";
-import { FilterPresetsBar } from "@/components/cards/FilterPresetsBar";
 import { FilterChipBar, type ChipFilters } from "@/components/cards/FilterChipBar";
-import { UsdHint } from "@/components/UsdHint";
+import { StatusPill } from "@/components/ui/StatusPill";
+import { Price } from "@/components/ui/Price";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { CardRowSkeleton } from "@/components/ui/Skeleton";
 import { CategoryIcon } from "@/components/icons/CategoryIcon";
@@ -23,7 +23,125 @@ import { CardThumbnail } from "@/components/cards/CardThumbnail";
 import { CardGrid } from "@/components/cards/CardGrid";
 import { PhotoLightbox } from "@/components/cards/PhotoLightbox";
 import { useUiStore } from "@/store/uiStore";
+import { motionProfileFor } from "@/lib/motionProfiles";
 import type { CardDTO } from "@/lib/data/types";
+import type { CategoryDTO } from "@/lib/categories";
+
+function InventoryRow({
+  card,
+  cardCategory,
+  isAll,
+  isSelected,
+  selectionActive,
+  onToggleSelect,
+  onMarkSold,
+  onViewPhoto,
+}: {
+  card: CardDTO;
+  cardCategory: CategoryDTO | undefined;
+  isAll: boolean;
+  isSelected: boolean;
+  selectionActive: boolean;
+  onToggleSelect: (id: string) => void;
+  onMarkSold: (card: CardDTO) => void;
+  onViewPhoto: (card: CardDTO) => void;
+}) {
+  const t = useTranslations("inventory");
+  const common = useTranslations("common");
+  const { pressing, handlers } = useLongPress(() => onToggleSelect(card.id));
+
+  return (
+    <tr
+      {...handlers}
+      className={`border-t border-border-1 transition-colors hover:bg-surface-1 ${isSelected ? "bg-[var(--accent-tint-weak)]" : ""} ${pressing ? "bg-surface-1" : ""}`}
+    >
+      <td className="px-1 py-2">
+        <button
+          onClick={() => onToggleSelect(card.id)}
+          aria-pressed={isSelected}
+          aria-label={t("selectCard", { name: card.name })}
+          className="tap-compact flex h-11 w-8 items-center justify-center"
+        >
+          <span
+            className={`flex h-5 w-5 items-center justify-center rounded-full border-2 ${
+              isSelected ? "border-accent bg-accent" : "border-border-1"
+            }`}
+          >
+            {isSelected && <span className="h-2 w-2 rounded-full bg-white" />}
+          </span>
+        </button>
+      </td>
+      <td className="px-1 py-2">
+        <CardThumbnail
+          photoFront={card.photoFront}
+          name={card.name}
+          themeTokens={cardCategory?.themeTokens}
+          size="md"
+          onClick={() => onViewPhoto(card)}
+        />
+      </td>
+      {isAll && (
+        <td className="hidden px-3 py-2 sm:table-cell">
+          <span
+            className="flex w-fit items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
+            style={{
+              background: cardCategory ? "var(--accent-tint-strong)" : "var(--surface-1)",
+              borderColor: cardCategory ? "var(--accent-tint-border)" : "var(--border-1)",
+              color: cardCategory?.themeTokens.accentDark ?? cardCategory?.themeTokens.accent ?? "#334155",
+            }}
+          >
+            <CategoryIcon iconSet={cardCategory?.themeTokens.iconSet ?? "neutral"} className="h-3 w-3" />
+            {cardCategory?.displayName ?? card.category}
+          </span>
+        </td>
+      )}
+      <td className="px-3 py-2">
+        <Link
+          href={selectionActive ? "#" : `/${card.category.toLowerCase()}/card/${card.id}`}
+          onClick={(e) => {
+            if (selectionActive) {
+              e.preventDefault();
+              onToggleSelect(card.id);
+            }
+          }}
+          className="font-medium hover:underline"
+        >
+          {card.name}
+        </Link>
+        {card.isHot && (
+          <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
+            {t("hotBadge")}
+          </span>
+        )}
+        {/* Series + status ride along under the name below `md`, since those columns hide there. */}
+        <div className="flex items-center gap-1.5 md:hidden">
+          <p className="truncate text-xs text-foreground/50">{card.series}</p>
+          <StatusPill status={card.status} className="sm:hidden" />
+        </div>
+      </td>
+      <td className="hidden px-3 py-2 md:table-cell">{card.series}</td>
+      <td className="hidden px-3 py-2 lg:table-cell">{card.rarity ?? "—"}</td>
+      <td className="hidden px-3 py-2 lg:table-cell">{card.grade ?? "—"}</td>
+      <td className="px-3 py-2">
+        <Price amountThb={card.askingPrice} size="sm" showUsd />
+        {card.quantity > 1 && <span className="text-foreground/50"> ×{card.quantity}</span>}
+      </td>
+      <td className="hidden px-3 py-2 sm:table-cell">
+        <StatusPill status={card.status} />
+      </td>
+      <td className="px-3 py-2 text-right">
+        {card.status !== "Sold" && (
+          <button
+            onClick={() => onMarkSold(card)}
+            className="booth-target rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-white hover:bg-accent-dark"
+          >
+            {common("markSold")}
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+}
 
 export default function CategoryInventoryPage() {
   const params = useParams<{ category: string }>();
@@ -31,7 +149,6 @@ export default function CategoryInventoryPage() {
   const q = searchParams.get("q") ?? "";
   const t = useTranslations("inventory");
   const common = useTranslations("common");
-  const statusLabel = useStatusLabel();
   const { data: categories } = useCategories();
   const [filters, setFilters] = useState<ChipFilters>({ status: "", minPrice: "", maxPrice: "" });
   const [sort, setSort] = useState("dateAdded");
@@ -74,6 +191,7 @@ export default function CategoryInventoryPage() {
   }
 
   const selectedCards = cards?.filter((c) => selectedIds.has(c.id)) ?? [];
+  const selectionActive = selectedIds.size > 0;
 
   return (
     <AnimatePresence mode="wait">
@@ -82,7 +200,7 @@ export default function CategoryInventoryPage() {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.18 }}
+        transition={{ duration: motionProfileFor(category?.themeTokens.motif).crossfadeSeconds }}
         className="space-y-4"
       >
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -102,7 +220,7 @@ export default function CategoryInventoryPage() {
                 onClick={() => setListViewMode("table")}
                 aria-label={t("tableView")}
                 aria-pressed={listViewMode === "table"}
-                className={`rounded px-2 py-1.5 ${listViewMode === "table" ? "bg-accent text-white" : "text-foreground/50 hover:bg-surface-1"}`}
+                className={`tap-compact rounded px-2 py-1.5 ${listViewMode === "table" ? "bg-accent text-white" : "text-foreground/50 hover:bg-surface-1"}`}
               >
                 <Rows3 className="h-4 w-4" />
               </button>
@@ -110,7 +228,7 @@ export default function CategoryInventoryPage() {
                 onClick={() => setListViewMode("grid")}
                 aria-label={t("gridView")}
                 aria-pressed={listViewMode === "grid"}
-                className={`rounded px-2 py-1.5 ${listViewMode === "grid" ? "bg-accent text-white" : "text-foreground/50 hover:bg-surface-1"}`}
+                className={`tap-compact rounded px-2 py-1.5 ${listViewMode === "grid" ? "bg-accent text-white" : "text-foreground/50 hover:bg-surface-1"}`}
               >
                 <LayoutGrid className="h-4 w-4" />
               </button>
@@ -118,7 +236,7 @@ export default function CategoryInventoryPage() {
             {!isAll && (
               <button
                 onClick={() => setShowImport(true)}
-                className="booth-target flex items-center gap-1.5 rounded-md border border-border-1 px-3 py-2 text-sm hover:bg-surface-1"
+                className="booth-target hidden items-center gap-1.5 rounded-md border border-border-1 px-3 py-2 text-sm hover:bg-surface-1 sm:flex"
               >
                 <Upload className="h-4 w-4" aria-hidden />
                 {t("bulkImport")}
@@ -126,7 +244,7 @@ export default function CategoryInventoryPage() {
             )}
             <Link
               href={`/${params.category}/new`}
-              className="booth-target flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
+              className="booth-target hidden items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark sm:flex"
             >
               <PackagePlus className="h-4 w-4" aria-hidden />
               {common("addCard")}
@@ -141,16 +259,7 @@ export default function CategoryInventoryPage() {
           order={order}
           onChangeSort={setSort}
           onChangeOrder={setOrder}
-        />
-
-        <FilterPresetsBar
           category={isAll ? null : category?.key ?? null}
-          currentFilters={{ status: filters.status, sort, order, minPrice: filters.minPrice, maxPrice: filters.maxPrice }}
-          onApply={(f) => {
-            setFilters({ status: f.status ?? "", minPrice: f.minPrice ?? "", maxPrice: f.maxPrice ?? "" });
-            setSort(f.sort ?? "dateAdded");
-            setOrder(f.order ?? "desc");
-          }}
         />
 
         <BulkActionsBar
@@ -203,8 +312,8 @@ export default function CategoryInventoryPage() {
             <table className="w-full text-sm">
               <thead className="bg-surface-1 text-left text-xs uppercase text-foreground/60">
                 <tr>
-                  <th className="w-8 px-3 py-2"></th>
-                  <th className="w-12 px-3 py-2"></th>
+                  <th className="w-8 px-1 py-2"></th>
+                  <th className="w-16 px-1 py-2"></th>
                   {isAll && <th className="hidden px-3 py-2 sm:table-cell">{t("colCategory")}</th>}
                   <th className="px-3 py-2">{t("colName")}</th>
                   <th className="hidden px-3 py-2 md:table-cell">{t("colSeriesSet")}</th>
@@ -216,73 +325,19 @@ export default function CategoryInventoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {cards?.map((card) => {
-                  const cardCategory = categories?.find((c) => c.key.toLowerCase() === card.category.toLowerCase());
-                  return (
-                    <tr key={card.id} className="border-t border-border-1 hover:bg-surface-1">
-                      <td className="px-3 py-2">
-                        <input type="checkbox" checked={selectedIds.has(card.id)} onChange={() => toggleSelect(card.id)} />
-                      </td>
-                      <td className="px-3 py-2">
-                        <CardThumbnail
-                          photoFront={card.photoFront}
-                          name={card.name}
-                          themeTokens={cardCategory?.themeTokens}
-                          onClick={() => setPhotoCard(card)}
-                        />
-                      </td>
-                      {isAll && (
-                        <td className="hidden px-3 py-2 sm:table-cell">
-                          <span
-                            className="flex w-fit items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium"
-                            style={{
-                              background: `color-mix(in srgb, ${cardCategory?.themeTokens.accent ?? "#64748B"} 14%, var(--surface-1))`,
-                              borderColor: `color-mix(in srgb, ${cardCategory?.themeTokens.accent ?? "#64748B"} 35%, var(--border-1))`,
-                              color: cardCategory?.themeTokens.accentDark ?? cardCategory?.themeTokens.accent ?? "#334155",
-                            }}
-                          >
-                            <CategoryIcon iconSet={cardCategory?.themeTokens.iconSet ?? "neutral"} className="h-3 w-3" />
-                            {cardCategory?.displayName ?? card.category}
-                          </span>
-                        </td>
-                      )}
-                      <td className="px-3 py-2">
-                        <Link href={`/${card.category.toLowerCase()}/card/${card.id}`} className="font-medium hover:underline">
-                          {card.name}
-                        </Link>
-                        {card.isHot && (
-                          <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
-                            {t("hotBadge")}
-                          </span>
-                        )}
-                        {/* Series + status ride along under the name below `md`, since those columns hide there. */}
-                        <p className="text-xs text-foreground/50 md:hidden">
-                          {card.series}
-                          <span className="sm:hidden"> · {statusLabel(card.status)}</span>
-                        </p>
-                      </td>
-                      <td className="hidden px-3 py-2 md:table-cell">{card.series}</td>
-                      <td className="hidden px-3 py-2 lg:table-cell">{card.rarity ?? "—"}</td>
-                      <td className="hidden px-3 py-2 lg:table-cell">{card.grade ?? "—"}</td>
-                      <td className="px-3 py-2">
-                        ฿{card.askingPrice.toLocaleString()}
-                        <UsdHint amountThb={card.askingPrice} />
-                        {card.quantity > 1 && <span className="text-foreground/50"> ×{card.quantity}</span>}
-                      </td>
-                      <td className="hidden px-3 py-2 sm:table-cell">{statusLabel(card.status)}</td>
-                      <td className="px-3 py-2 text-right">
-                        {card.status !== "Sold" && (
-                          <button
-                            onClick={() => setSoldCard(card)}
-                            className="booth-target rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-white hover:bg-accent-dark"
-                          >
-                            {common("markSold")}
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                {cards?.map((card) => (
+                  <InventoryRow
+                    key={card.id}
+                    card={card}
+                    cardCategory={categories?.find((c) => c.key.toLowerCase() === card.category.toLowerCase())}
+                    isAll={isAll}
+                    isSelected={selectedIds.has(card.id)}
+                    selectionActive={selectionActive}
+                    onToggleSelect={toggleSelect}
+                    onMarkSold={setSoldCard}
+                    onViewPhoto={setPhotoCard}
+                  />
+                ))}
               </tbody>
             </table>
           </div>
@@ -306,6 +361,20 @@ export default function CategoryInventoryPage() {
             photoBack={photoCard.photoBack}
             onClose={() => setPhotoCard(null)}
           />
+        )}
+
+        {/* Mobile-only: the header's Add Card link scrolls away with the page,
+            so the single most common action gets a thumb-reachable anchor
+            that never does. Hidden once a bulk selection is active so it
+            doesn't collide with the sticky selection bar above it. */}
+        {!selectionActive && (
+          <Link
+            href={`/${params.category}/new`}
+            aria-label={common("addCard")}
+            className="fixed right-4 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-30 flex h-14 w-14 items-center justify-center rounded-full bg-accent text-white shadow-[var(--shadow-md)] hover:bg-accent-dark md:hidden"
+          >
+            <Plus className="h-6 w-6" />
+          </Link>
         )}
       </motion.div>
     </AnimatePresence>

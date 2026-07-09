@@ -25,5 +25,7 @@
   "moreOptions": "More options",
   "categorySwitcherLabel": "Category switcher",
   "printLabel": "Print Label",
-  "qrCodeAlt": "QR code for {name}"
+  "qrCodeAlt": "QR code for {name}",
+  "close": "Close",
+  "tapToClose": "Tap to close"
 }

@@ -56,13 +56,16 @@ export default function NewCardPage() {
         initial={emptyFormValues(category)}
         submitLabel={common("addCard")}
         errors={errors}
-        onSubmit={async (values) => {
+        allowAddSimilar
+        onSubmit={async (values, mode) => {
           setErrors([]);
           try {
             const card = await createCard.mutateAsync(formValuesToInput(category, values));
-            router.push(`/${category.key.toLowerCase()}/card/${card.id}`);
+            if (mode === "save") router.push(`/${category.key.toLowerCase()}/card/${card.id}`);
+            return true;
           } catch (e) {
             setErrors([e instanceof Error ? e.message : t("createFailed")]);
+            return false;
           }
         }}
       />

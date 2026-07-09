@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { BoothModeToggle } from "@/components/BoothModeToggle";
 import { DarkModeToggle } from "@/components/DarkModeToggle";
+import { useClickOutside } from "@/hooks/useClickOutside";
 
 // Consolidates the lower-frequency toggles (language, booth mode, dark mode)
 // behind one control so the header's primary row (search, offline status,
@@ -14,15 +15,7 @@ import { DarkModeToggle } from "@/components/DarkModeToggle";
 export function MoreMenu() {
   const t = useTranslations("common");
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function onClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", onClick);
-    return () => document.removeEventListener("mousedown", onClick);
-  }, []);
+  const ref = useClickOutside<HTMLDivElement>(() => setOpen(false), open);
 
   return (
     <div className="relative" ref={ref}>

@@ -11,5 +11,10 @@
   "cumulativeProfit": "Cumulative Profit Over the Event",
   "tooltipRevenue": "Revenue",
   "tooltipProfit": "Profit",
-  "tooltipCumulativeProfit": "Cumulative Profit"
+  "tooltipCumulativeProfit": "Cumulative Profit",
+  "trendNew": "new",
+  "trendVsYesterday": "{pct} vs yesterday",
+  "todaysPriorities": "Today's Priorities",
+  "priorityStaleComps": "hot, needs a price check",
+  "priorityDaysInStock": "{days}d in stock"
 }

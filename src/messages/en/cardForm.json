@@ -29,5 +29,10 @@
   "addCardTitle": "Add {category} Card",
   "chooseCategory": "Choose a category to add a card to:",
   "createFailed": "Failed to create card",
-  "saveFailed": "Failed to save"
+  "saveFailed": "Failed to save",
+  "profitLabel": "profit",
+  "decreaseQuantity": "Decrease quantity",
+  "increaseQuantity": "Increase quantity",
+  "saveAndAddSimilar": "Save & Add Similar",
+  "saving": "Saving…"
 }

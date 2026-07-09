@@ -3,7 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2, Printer } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
 import { useCard, useUpdateCard, useDeleteCard } from "@/lib/data/cards";
@@ -11,8 +11,8 @@ import { CardForm, formValuesFromCard, formValuesToInput } from "@/components/ca
 import { MarkSoldDialog } from "@/components/cards/MarkSoldDialog";
 import { FactSheetPanel } from "@/components/cards/FactSheetPanel";
 import { Skeleton } from "@/components/ui/Skeleton";
+import { StatusPill } from "@/components/ui/StatusPill";
 import { actionWithUndo } from "@/lib/undoToast";
-import { useStatusLabel } from "@/lib/statusLabels";
 
 export default function CardDetailPage() {
   const params = useParams<{ category: string; id: string }>();
@@ -20,7 +20,6 @@ export default function CardDetailPage() {
   const t = useTranslations("cardDetail");
   const cardFormT = useTranslations("cardForm");
   const common = useTranslations("common");
-  const statusLabel = useStatusLabel();
   const { data: categories } = useCategories();
   const { data: card, isLoading } = useCard(params.id);
   const updateCard = useUpdateCard();
@@ -55,18 +54,16 @@ export default function CardDetailPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-xl font-semibold">{card.name}</h1>
-          <p className="text-sm text-foreground/60">
-            {category.displayName} · {statusLabel(card.status)} · {t("qty", { count: card.quantity })}
-          </p>
+          <div className="mt-1 flex items-center gap-2 text-sm text-foreground/60">
+            <span>{category.displayName}</span>
+            <StatusPill status={card.status} />
+            <span>{t("qty", { count: card.quantity })}</span>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Link
-            href={`/label/${card.id}`}
-            target="_blank"
-            className="booth-target rounded-md border border-border-1 px-4 py-2 text-sm hover:bg-surface-1"
-          >
-            {t("printQrLabel")}
-          </Link>
+        {/* Mark Sold leads visually since it's the frequent, revenue-generating
+            action; Delete is rare and destructive, so it's icon-only and set
+            apart rather than sitting at equal weight beside it. */}
+        <div className="flex items-center gap-2">
           {card.status !== "Sold" && (
             <button
               onClick={() => setShowSoldDialog(true)}
@@ -75,6 +72,15 @@ export default function CardDetailPage() {
               {common("markSold")}
             </button>
           )}
+          <Link
+            href={`/label/${card.id}`}
+            target="_blank"
+            aria-label={t("printQrLabel")}
+            className="booth-target flex items-center gap-1.5 rounded-md border border-border-1 px-3 py-2 text-sm hover:bg-surface-1"
+          >
+            <Printer className="h-4 w-4" aria-hidden />
+            <span className="hidden sm:inline">{t("printQrLabel")}</span>
+          </Link>
           <button
             onClick={() => {
               actionWithUndo(t("cardDeleted", { name: card.name }), () => {
@@ -82,9 +88,10 @@ export default function CardDetailPage() {
               });
               router.push(`/${category.key.toLowerCase()}`);
             }}
-            className="booth-target rounded-md border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
+            aria-label={common("delete")}
+            className="booth-target flex items-center justify-center rounded-md px-3 py-2 text-foreground/40 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
           >
-            {common("delete")}
+            <Trash2 className="h-4 w-4" aria-hidden />
           </button>
         </div>
       </div>
@@ -103,8 +110,10 @@ export default function CardDetailPage() {
               setErrors([]);
               try {
                 await updateCard.mutateAsync({ id: card.id, input: formValuesToInput(category, values) });
+                return true;
               } catch (e) {
                 setErrors([e instanceof Error ? e.message : cardFormT("saveFailed")]);
+                return false;
               }
             }}
           />

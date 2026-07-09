@@ -6,13 +6,14 @@ import { motion } from "motion/react";
 import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
 import { CategoryIcon } from "@/components/icons/CategoryIcon";
+import { motionProfileFor } from "@/lib/motionProfiles";
 import type { ThemeTokens } from "@/lib/fieldSchema";
 
 function tabHref(key: string) {
   return key === "all" ? "/all" : `/${key.toLowerCase()}`;
 }
 
-const ALL_TAB_THEME: Pick<ThemeTokens, "accent" | "iconSet"> = { accent: "#64748B", iconSet: "neutral" };
+const ALL_TAB_THEME: Pick<ThemeTokens, "accent" | "iconSet" | "motif"> = { accent: "#64748B", iconSet: "neutral", motif: "none" };
 
 export function CategorySwitcher() {
   const t = useTranslations("common");
@@ -28,6 +29,7 @@ export function CategorySwitcher() {
       {tabs.map((tab) => {
         const href = tabHref(tab.key);
         const isActive = activeSegment.toLowerCase() === tab.key.toLowerCase();
+        const motion_ = motionProfileFor(tab.themeTokens.motif);
         return (
           <Link
             key={tab.key}
@@ -40,7 +42,7 @@ export function CategorySwitcher() {
               <motion.span
                 layoutId="active-category-pill"
                 className="absolute inset-0 rounded-md bg-accent"
-                transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                transition={{ type: "spring", stiffness: motion_.stiffness, damping: motion_.damping }}
               />
             )}
             <span
