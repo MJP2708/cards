@@ -8,5 +8,8 @@
   "profitByCategory": "Profit by Category",
   "topSelling": "Top Selling Cards",
   "cardTypePerformance": "Card Type Performance (Profit)",
-  "cumulativeProfit": "Cumulative Profit Over the Event"
+  "cumulativeProfit": "Cumulative Profit Over the Event",
+  "tooltipRevenue": "Revenue",
+  "tooltipProfit": "Profit",
+  "tooltipCumulativeProfit": "Cumulative Profit"
 }

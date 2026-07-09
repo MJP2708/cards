@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MoreHorizontal } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { BoothModeToggle } from "@/components/BoothModeToggle";
 import { DarkModeToggle } from "@/components/DarkModeToggle";
@@ -11,6 +12,7 @@ import { DarkModeToggle } from "@/components/DarkModeToggle";
 // command palette) doesn't compete for attention with settings a seller
 // touches once a session, not once a sale.
 export function MoreMenu() {
+  const t = useTranslations("common");
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -26,7 +28,7 @@ export function MoreMenu() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((o) => !o)}
-        aria-label="More options"
+        aria-label={t("moreOptions")}
         aria-expanded={open}
         className="booth-target flex items-center justify-center rounded-md border border-border-1 px-2.5 py-1.5 hover:bg-surface-1"
       >

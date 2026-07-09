@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { CardThumbnail } from "@/components/cards/CardThumbnail";
 import { UsdHint } from "@/components/UsdHint";
 import type { CardDTO } from "@/lib/data/types";
@@ -23,6 +24,9 @@ export function CardGrid({
   onMarkSold: (card: CardDTO) => void;
   onViewPhoto: (card: CardDTO) => void;
 }) {
+  const t = useTranslations("inventory");
+  const common = useTranslations("common");
+
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
       {cards.map((card) => {
@@ -42,11 +46,11 @@ export function CardGrid({
                 checked={selectedIds.has(card.id)}
                 onChange={() => onToggleSelect(card.id)}
                 className="absolute left-2 top-2 h-4 w-4"
-                aria-label={`Select ${card.name}`}
+                aria-label={t("selectCard", { name: card.name })}
               />
               {card.isHot && (
                 <span className="absolute right-2 top-2 rounded-full bg-red-600 px-1.5 py-0.5 text-[0.65rem] font-medium text-white">
-                  HOT
+                  {t("hotBadge")}
                 </span>
               )}
             </div>
@@ -69,10 +73,10 @@ export function CardGrid({
                   onClick={() => onMarkSold(card)}
                   className="booth-target mt-1 rounded-md bg-accent px-2 py-1 text-xs font-medium text-white hover:bg-accent-dark"
                 >
-                  Mark Sold
+                  {common("markSold")}
                 </button>
               ) : (
-                <span className="mt-1 rounded-md bg-surface-1 px-2 py-1 text-center text-xs text-foreground/50">Sold</span>
+                <span className="mt-1 rounded-md bg-surface-1 px-2 py-1 text-center text-xs text-foreground/50">{common("sold")}</span>
               )}
             </div>
           </div>

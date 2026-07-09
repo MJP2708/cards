@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import { upload } from "@vercel/blob/client";
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { Upload, X, Loader2, Link as LinkIcon } from "lucide-react";
 import { isOptimizableImageUrl } from "@/lib/images";
 
@@ -15,6 +16,7 @@ export function PhotoUploadField({
   value: string;
   onChange: (url: string) => void;
 }) {
+  const t = useTranslations("cardForm");
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showUrlInput, setShowUrlInput] = useState(false);
@@ -58,7 +60,7 @@ export function PhotoUploadField({
             className="flex items-center gap-1 rounded-md border border-border-1 px-2 py-1.5 text-xs hover:bg-surface-1"
           >
             <X className="h-3 w-3" />
-            Remove
+            {t("remove")}
           </button>
         </div>
       ) : (
@@ -70,7 +72,7 @@ export function PhotoUploadField({
             className="flex items-center gap-1.5 rounded-md border border-dashed border-border-1 px-3 py-2 text-xs hover:bg-surface-1 disabled:opacity-50"
           >
             {uploading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Upload className="h-3.5 w-3.5" />}
-            {uploading ? "Uploading…" : "Upload photo"}
+            {uploading ? t("uploading") : t("uploadPhoto")}
           </button>
           <button
             type="button"
@@ -78,7 +80,7 @@ export function PhotoUploadField({
             className="flex items-center gap-1 text-xs text-foreground/50 hover:text-foreground"
           >
             <LinkIcon className="h-3 w-3" />
-            or paste URL
+            {t("orPasteUrl")}
           </button>
         </div>
       )}
@@ -98,7 +100,7 @@ export function PhotoUploadField({
       {showUrlInput && !value && (
         <input
           type="url"
-          placeholder="https://…"
+          placeholder={t("urlPlaceholder")}
           onChange={(e) => onChange(e.target.value)}
           className="w-full rounded-md border border-border-1 bg-background px-3 py-2 text-sm outline-none focus:border-accent"
         />

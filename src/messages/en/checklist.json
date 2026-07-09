@@ -1,0 +1,7 @@
+{
+  "title": "Pre-Event Checklist",
+  "summary": "{packed} of {total} in-stock cards packed",
+  "categorySummary": "{category} — {packed}/{total} packed",
+  "packed": "Packed",
+  "noCards": "No in-stock cards to pack."
+}

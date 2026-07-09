@@ -1,0 +1,7 @@
+{
+  "title": "เช็คลิสต์ก่อนวันงาน",
+  "summary": "แพ็คแล้ว {packed} จาก {total} ใบที่มีในสต็อก",
+  "categorySummary": "{category} — แพ็คแล้ว {packed}/{total}",
+  "packed": "แพ็คแล้ว",
+  "noCards": "ไม่มีการ์ดในสต็อกให้แพ็ค"
+}

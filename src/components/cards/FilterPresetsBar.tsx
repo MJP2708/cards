@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   useFilterPresets,
   useCreateFilterPreset,
@@ -17,6 +18,8 @@ export function FilterPresetsBar({
   currentFilters: FilterPresetValues;
   onApply: (filters: FilterPresetValues) => void;
 }) {
+  const t = useTranslations("inventory");
+  const common = useTranslations("common");
   const { data: presets } = useFilterPresets(category ?? undefined);
   const createPreset = useCreateFilterPreset();
   const deletePreset = useDeleteFilterPreset();
@@ -25,7 +28,7 @@ export function FilterPresetsBar({
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-xs">
-      <span className="text-foreground/50">Presets:</span>
+      <span className="text-foreground/50">{t("presets")}:</span>
       {presets?.map((preset) => (
         <span key={preset.id} className="flex items-center gap-1 rounded-full border border-border-1 px-2 py-1">
           <button onClick={() => onApply(preset.filterJson)} className="hover:underline">
@@ -33,7 +36,7 @@ export function FilterPresetsBar({
           </button>
           <button
             onClick={() => deletePreset.mutate(preset.id)}
-            aria-label={`Delete preset ${preset.name}`}
+            aria-label={t("deletePreset", { name: preset.name })}
             className="text-foreground/40 hover:text-red-600"
           >
             ×
@@ -42,7 +45,7 @@ export function FilterPresetsBar({
       ))}
       {!naming ? (
         <button onClick={() => setNaming(true)} className="rounded-full border border-dashed border-border-1 px-2 py-1 hover:bg-surface-1">
-          + Save current filters
+          {t("savePreset")}
         </button>
       ) : (
         <span className="flex items-center gap-1">
@@ -50,7 +53,7 @@ export function FilterPresetsBar({
             autoFocus
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Preset name"
+            placeholder={t("presetName")}
             className="rounded-md border border-border-1 px-2 py-1"
           />
           <button
@@ -62,10 +65,10 @@ export function FilterPresetsBar({
             }}
             className="rounded-md bg-accent px-2 py-1 text-white"
           >
-            Save
+            {common("save")}
           </button>
           <button onClick={() => setNaming(false)} className="rounded-md px-2 py-1 hover:bg-surface-1">
-            Cancel
+            {common("cancel")}
           </button>
         </span>
       )}

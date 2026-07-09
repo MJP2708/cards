@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useTranslations } from "next-intl";
 import { CategoryIcon } from "@/components/icons/CategoryIcon";
 import { isOptimizableImageUrl } from "@/lib/images";
 import type { ThemeTokens } from "@/lib/fieldSchema";
@@ -20,6 +21,7 @@ export function CardThumbnail({
   size?: keyof typeof SIZES;
   onClick?: () => void;
 }) {
+  const t = useTranslations("inventory");
   const width = SIZES[size];
   const accent = themeTokens?.accent ?? "#64748B";
 
@@ -59,7 +61,7 @@ export function CardThumbnail({
       onClick={onClick}
       className={`${className} transition-transform hover:scale-105`}
       style={style}
-      aria-label={`View ${name} photo`}
+      aria-label={t("viewPhoto", { name })}
     >
       {content}
     </button>

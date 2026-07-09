@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { CategoryDTO } from "@/lib/categories";
 import { csvTemplateFor, parseCsvForCategory } from "@/lib/csv";
 import { useImportCards } from "@/lib/data/cards";
 
 export function CsvImportDialog({ category, onClose }: { category: CategoryDTO; onClose: () => void }) {
+  const t = useTranslations("dialogs");
   const importCards = useImportCards();
   const [errors, setErrors] = useState<string[]>([]);
   const [result, setResult] = useState<string | null>(null);
@@ -32,21 +34,19 @@ export function CsvImportDialog({ category, onClose }: { category: CategoryDTO; 
     }
     try {
       const res = await importCards.mutateAsync({ category: category.key, rows });
-      setResult(`Imported ${res.count} cards.`);
+      setResult(t("importedCount", { count: res.count }));
     } catch (e) {
-      setErrors([e instanceof Error ? e.message : "Import failed"]);
+      setErrors([e instanceof Error ? e.message : t("importFailed")]);
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-md rounded-lg border border-border-1 bg-background p-5 shadow-xl">
-        <h2 className="mb-3 text-lg font-semibold">Bulk Import — {category.displayName}</h2>
-        <p className="mb-3 text-sm text-foreground/60">
-          CSV columns differ per category. Download the template below, fill it in before the event, then upload it here.
-        </p>
+        <h2 className="mb-3 text-lg font-semibold">{t("bulkImportTitle", { category: category.displayName })}</h2>
+        <p className="mb-3 text-sm text-foreground/60">{t("csvHelp")}</p>
         <button onClick={downloadTemplate} className="mb-4 rounded-md border border-border-1 px-3 py-1.5 text-sm hover:bg-surface-1">
-          Download CSV template
+          {t("downloadTemplate")}
         </button>
         <input
           type="file"
@@ -64,7 +64,7 @@ export function CsvImportDialog({ category, onClose }: { category: CategoryDTO; 
         {result && <p className="mb-3 text-sm text-emerald-600">{result}</p>}
         <div className="flex justify-end">
           <button onClick={onClose} className="rounded-md px-3 py-2 text-sm hover:bg-surface-1">
-            Close
+            {t("close")}
           </button>
         </div>
       </div>

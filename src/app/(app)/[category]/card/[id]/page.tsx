@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
 import { useCard, useUpdateCard, useDeleteCard } from "@/lib/data/cards";
 import { CardForm, formValuesFromCard, formValuesToInput } from "@/components/cards/CardForm";
@@ -11,10 +12,15 @@ import { MarkSoldDialog } from "@/components/cards/MarkSoldDialog";
 import { FactSheetPanel } from "@/components/cards/FactSheetPanel";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { actionWithUndo } from "@/lib/undoToast";
+import { useStatusLabel } from "@/lib/statusLabels";
 
 export default function CardDetailPage() {
   const params = useParams<{ category: string; id: string }>();
   const router = useRouter();
+  const t = useTranslations("cardDetail");
+  const cardFormT = useTranslations("cardForm");
+  const common = useTranslations("common");
+  const statusLabel = useStatusLabel();
   const { data: categories } = useCategories();
   const { data: card, isLoading } = useCard(params.id);
   const updateCard = useUpdateCard();
@@ -43,14 +49,14 @@ export default function CardDetailPage() {
         className="inline-flex items-center gap-1 text-sm text-foreground/60 hover:text-foreground"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Back to {category.displayName}
+        {cardFormT("backTo", { category: category.displayName })}
       </Link>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-xl font-semibold">{card.name}</h1>
           <p className="text-sm text-foreground/60">
-            {category.displayName} · {card.status} · Qty {card.quantity}
+            {category.displayName} · {statusLabel(card.status)} · {t("qty", { count: card.quantity })}
           </p>
         </div>
         <div className="flex gap-2">
@@ -59,26 +65,26 @@ export default function CardDetailPage() {
             target="_blank"
             className="booth-target rounded-md border border-border-1 px-4 py-2 text-sm hover:bg-surface-1"
           >
-            Print QR Label
+            {t("printQrLabel")}
           </Link>
           {card.status !== "Sold" && (
             <button
               onClick={() => setShowSoldDialog(true)}
               className="booth-target rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
             >
-              Mark Sold
+              {common("markSold")}
             </button>
           )}
           <button
             onClick={() => {
-              actionWithUndo(`"${card.name}" deleted`, () => {
+              actionWithUndo(t("cardDeleted", { name: card.name }), () => {
                 deleteCard.mutate(card.id);
               });
               router.push(`/${category.key.toLowerCase()}`);
             }}
             className="booth-target rounded-md border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
           >
-            Delete
+            {common("delete")}
           </button>
         </div>
       </div>
@@ -91,14 +97,14 @@ export default function CardDetailPage() {
           <CardForm
             category={category}
             initial={formValuesFromCard(card)}
-            submitLabel="Save Changes"
+            submitLabel={common("saveChanges")}
             errors={errors}
             onSubmit={async (values) => {
               setErrors([]);
               try {
                 await updateCard.mutateAsync({ id: card.id, input: formValuesToInput(category, values) });
               } catch (e) {
-                setErrors([e instanceof Error ? e.message : "Failed to save"]);
+                setErrors([e instanceof Error ? e.message : cardFormT("saveFailed")]);
               }
             }}
           />

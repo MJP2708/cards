@@ -5,7 +5,9 @@ import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { PackagePlus, Upload, Inbox, SearchX, LayoutGrid, Rows3 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
+import { useStatusLabel } from "@/lib/statusLabels";
 import { useCards } from "@/lib/data/cards";
 import { BulkActionsBar } from "@/components/cards/BulkActionsBar";
 import { MarkSoldDialog } from "@/components/cards/MarkSoldDialog";
@@ -27,6 +29,9 @@ export default function CategoryInventoryPage() {
   const params = useParams<{ category: string }>();
   const searchParams = useSearchParams();
   const q = searchParams.get("q") ?? "";
+  const t = useTranslations("inventory");
+  const common = useTranslations("common");
+  const statusLabel = useStatusLabel();
   const { data: categories } = useCategories();
   const [filters, setFilters] = useState<ChipFilters>({ status: "", minPrice: "", maxPrice: "" });
   const [sort, setSort] = useState("dateAdded");
@@ -84,18 +89,18 @@ export default function CategoryInventoryPage() {
           <div>
             <h1 className="flex items-center gap-2 text-display-md font-display font-semibold">
               <CategoryIcon iconSet={category?.themeTokens.iconSet ?? "neutral"} className="h-6 w-6" style={{ color: "var(--accent)" }} />
-              {isAll ? "All Categories" : category?.displayName ?? params.category}
+              {isAll ? common("allCategories") : category?.displayName ?? params.category}
             </h1>
             <p className="text-sm text-foreground/60">
-              {cards?.length ?? 0} cards · In-stock value ฿{totalValue.toLocaleString()}
-              {q && <> · searching “{q}”</>}
+              {t("cardsCount", { count: cards?.length ?? 0 })} · {t("inStockValue")} ฿{totalValue.toLocaleString()}
+              {q && <> · {t("searching", { query: q })}</>}
             </p>
           </div>
           <div className="flex gap-2">
             <div className="flex rounded-md border border-border-1 p-0.5">
               <button
                 onClick={() => setListViewMode("table")}
-                aria-label="Table view"
+                aria-label={t("tableView")}
                 aria-pressed={listViewMode === "table"}
                 className={`rounded px-2 py-1.5 ${listViewMode === "table" ? "bg-accent text-white" : "text-foreground/50 hover:bg-surface-1"}`}
               >
@@ -103,7 +108,7 @@ export default function CategoryInventoryPage() {
               </button>
               <button
                 onClick={() => setListViewMode("grid")}
-                aria-label="Grid view"
+                aria-label={t("gridView")}
                 aria-pressed={listViewMode === "grid"}
                 className={`rounded px-2 py-1.5 ${listViewMode === "grid" ? "bg-accent text-white" : "text-foreground/50 hover:bg-surface-1"}`}
               >
@@ -116,7 +121,7 @@ export default function CategoryInventoryPage() {
                 className="booth-target flex items-center gap-1.5 rounded-md border border-border-1 px-3 py-2 text-sm hover:bg-surface-1"
               >
                 <Upload className="h-4 w-4" aria-hidden />
-                Bulk import
+                {t("bulkImport")}
               </button>
             )}
             <Link
@@ -124,7 +129,7 @@ export default function CategoryInventoryPage() {
               className="booth-target flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
             >
               <PackagePlus className="h-4 w-4" aria-hidden />
-              Add Card
+              {common("addCard")}
             </Link>
           </div>
         </div>
@@ -168,13 +173,15 @@ export default function CategoryInventoryPage() {
         {!isLoading && cards?.length === 0 && (
           <EmptyState
             icon={hasActiveFilters ? SearchX : Inbox}
-            title={hasActiveFilters ? "No cards match these filters" : `No ${isAll ? "" : category?.displayName + " "}cards yet`}
-            description={
+            title={
               hasActiveFilters
-                ? "Try clearing a filter or the search bar to widen the results."
-                : "Add your first card to start tracking inventory for this category."
+                ? t("emptyFilteredTitle")
+                : isAll
+                  ? t("emptyAllTitle")
+                  : t("emptyCategoryTitle", { category: category?.displayName ?? params.category })
             }
-            actionLabel={hasActiveFilters ? undefined : "Add Card"}
+            description={hasActiveFilters ? t("emptyFilteredDescription") : t("emptyDescription")}
+            actionLabel={hasActiveFilters ? undefined : common("addCard")}
             actionHref={hasActiveFilters ? undefined : `/${params.category}/new`}
           />
         )}
@@ -198,13 +205,13 @@ export default function CategoryInventoryPage() {
                 <tr>
                   <th className="w-8 px-3 py-2"></th>
                   <th className="w-12 px-3 py-2"></th>
-                  {isAll && <th className="hidden px-3 py-2 sm:table-cell">Category</th>}
-                  <th className="px-3 py-2">Name</th>
-                  <th className="hidden px-3 py-2 md:table-cell">Series/Set</th>
-                  <th className="hidden px-3 py-2 lg:table-cell">Rarity</th>
-                  <th className="hidden px-3 py-2 lg:table-cell">Grade</th>
-                  <th className="px-3 py-2">Price</th>
-                  <th className="hidden px-3 py-2 sm:table-cell">Status</th>
+                  {isAll && <th className="hidden px-3 py-2 sm:table-cell">{t("colCategory")}</th>}
+                  <th className="px-3 py-2">{t("colName")}</th>
+                  <th className="hidden px-3 py-2 md:table-cell">{t("colSeriesSet")}</th>
+                  <th className="hidden px-3 py-2 lg:table-cell">{t("colRarity")}</th>
+                  <th className="hidden px-3 py-2 lg:table-cell">{t("colGrade")}</th>
+                  <th className="px-3 py-2">{t("colPrice")}</th>
+                  <th className="hidden px-3 py-2 sm:table-cell">{t("colStatus")}</th>
                   <th className="px-3 py-2"></th>
                 </tr>
               </thead>
@@ -245,13 +252,13 @@ export default function CategoryInventoryPage() {
                         </Link>
                         {card.isHot && (
                           <span className="ml-2 rounded-full bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-700 dark:bg-red-950 dark:text-red-300">
-                            HOT
+                            {t("hotBadge")}
                           </span>
                         )}
                         {/* Series + status ride along under the name below `md`, since those columns hide there. */}
                         <p className="text-xs text-foreground/50 md:hidden">
                           {card.series}
-                          <span className="sm:hidden"> · {card.status}</span>
+                          <span className="sm:hidden"> · {statusLabel(card.status)}</span>
                         </p>
                       </td>
                       <td className="hidden px-3 py-2 md:table-cell">{card.series}</td>
@@ -262,14 +269,14 @@ export default function CategoryInventoryPage() {
                         <UsdHint amountThb={card.askingPrice} />
                         {card.quantity > 1 && <span className="text-foreground/50"> ×{card.quantity}</span>}
                       </td>
-                      <td className="hidden px-3 py-2 sm:table-cell">{card.status}</td>
+                      <td className="hidden px-3 py-2 sm:table-cell">{statusLabel(card.status)}</td>
                       <td className="px-3 py-2 text-right">
                         {card.status !== "Sold" && (
                           <button
                             onClick={() => setSoldCard(card)}
                             className="booth-target rounded-md bg-accent px-2.5 py-1 text-xs font-medium text-white hover:bg-accent-dark"
                           >
-                            Mark Sold
+                            {common("markSold")}
                           </button>
                         )}
                       </td>

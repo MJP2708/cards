@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { CardDTO } from "@/lib/data/types";
 import { useBundleSale } from "@/lib/data/cards";
-
-const PAYMENT_METHODS = ["Cash", "PromptPay", "Bank Transfer", "Credit Card", "Other"];
+import { PAYMENT_METHOD_VALUES, usePaymentMethodLabel } from "@/lib/paymentMethods";
 
 export function BundleSaleDialog({ cards, onClose }: { cards: CardDTO[]; onClose: () => void }) {
+  const t = useTranslations("dialogs");
+  const common = useTranslations("common");
+  const paymentLabel = usePaymentMethodLabel();
   const bundleSale = useBundleSale();
   const suggestedTotal = cards.reduce((sum, c) => sum + c.askingPrice, 0);
   const [totalPrice, setTotalPrice] = useState(suggestedTotal.toString());
-  const [paymentMethod, setPaymentMethod] = useState(PAYMENT_METHODS[0]);
+  const [paymentMethod, setPaymentMethod] = useState<string>(PAYMENT_METHOD_VALUES[0]);
   const [buyerContact, setBuyerContact] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -26,17 +29,15 @@ export function BundleSaleDialog({ cards, onClose }: { cards: CardDTO[]; onClose
       });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to record bundle sale");
+      setError(err instanceof Error ? err.message : t("bundleSaleFailed"));
     }
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
       <div className="w-full max-w-sm rounded-lg border border-border-1 bg-background p-5 shadow-xl">
-        <h2 className="mb-1 text-lg font-semibold">Sell Bundle</h2>
-        <p className="mb-3 text-xs text-foreground/60">
-          {cards.length} cards, each will be marked sold and its share allocated by asking price.
-        </p>
+        <h2 className="mb-1 text-lg font-semibold">{t("sellBundleTitle")}</h2>
+        <p className="mb-3 text-xs text-foreground/60">{t("bundleDescription", { count: cards.length })}</p>
         <ul className="mb-3 max-h-28 overflow-y-auto text-xs text-foreground/70">
           {cards.map((c) => (
             <li key={c.id}>
@@ -47,7 +48,7 @@ export function BundleSaleDialog({ cards, onClose }: { cards: CardDTO[]; onClose
         <form onSubmit={handleSubmit} className="space-y-3">
           {error && <p className="text-sm text-red-600">{error}</p>}
           <label className="flex flex-col gap-1 text-sm">
-            Combined sale price (THB)
+            {t("combinedPriceLabel")}
             <input
               type="number"
               step="0.01"
@@ -59,19 +60,21 @@ export function BundleSaleDialog({ cards, onClose }: { cards: CardDTO[]; onClose
             />
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            Payment method
+            {t("paymentMethodLabel")}
             <select
               value={paymentMethod}
               onChange={(e) => setPaymentMethod(e.target.value)}
               className="rounded-md border border-border-1 px-3 py-2"
             >
-              {PAYMENT_METHODS.map((m) => (
-                <option key={m}>{m}</option>
+              {PAYMENT_METHOD_VALUES.map((m) => (
+                <option key={m} value={m}>
+                  {paymentLabel(m)}
+                </option>
               ))}
             </select>
           </label>
           <label className="flex flex-col gap-1 text-sm">
-            Buyer contact (optional)
+            {t("buyerContactLabel")}
             <input
               value={buyerContact}
               onChange={(e) => setBuyerContact(e.target.value)}
@@ -80,14 +83,14 @@ export function BundleSaleDialog({ cards, onClose }: { cards: CardDTO[]; onClose
           </label>
           <div className="flex justify-end gap-2 pt-2">
             <button type="button" onClick={onClose} className="rounded-md px-3 py-2 text-sm hover:bg-surface-1">
-              Cancel
+              {common("cancel")}
             </button>
             <button
               type="submit"
               disabled={bundleSale.isPending}
               className="booth-target rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
             >
-              {bundleSale.isPending ? "Recording…" : "Confirm Bundle Sale"}
+              {bundleSale.isPending ? t("recording") : t("confirmBundleSale")}
             </button>
           </div>
         </form>

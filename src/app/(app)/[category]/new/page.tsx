@@ -3,6 +3,7 @@
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
 import { ArrowLeft } from "lucide-react";
 import { useCreateCard } from "@/lib/data/cards";
@@ -11,18 +12,20 @@ import { CardForm, emptyFormValues, formValuesToInput } from "@/components/cards
 export default function NewCardPage() {
   const params = useParams<{ category: string }>();
   const router = useRouter();
+  const t = useTranslations("cardForm");
+  const common = useTranslations("common");
   const { data: categories, isLoading } = useCategories();
   const createCard = useCreateCard();
   const [errors, setErrors] = useState<string[]>([]);
 
   const category = categories?.find((c) => c.key.toLowerCase() === params.category.toLowerCase());
 
-  if (isLoading) return <p className="text-sm text-foreground/60">Loading…</p>;
+  if (isLoading) return <p className="text-sm text-foreground/60">{common("loading")}</p>;
 
   if (!category) {
     return (
       <div className="max-w-md space-y-3">
-        <p className="text-sm">Choose a category to add a card to:</p>
+        <p className="text-sm">{t("chooseCategory")}</p>
         <div className="flex flex-wrap gap-2">
           {categories?.map((c) => (
             <Link
@@ -45,13 +48,13 @@ export default function NewCardPage() {
         className="inline-flex items-center gap-1 text-sm text-foreground/60 hover:text-foreground"
       >
         <ArrowLeft className="h-3.5 w-3.5" />
-        Back to {category.displayName}
+        {t("backTo", { category: category.displayName })}
       </Link>
-      <h1 className="font-display text-xl font-semibold">Add {category.displayName} Card</h1>
+      <h1 className="font-display text-xl font-semibold">{t("addCardTitle", { category: category.displayName })}</h1>
       <CardForm
         category={category}
         initial={emptyFormValues(category)}
-        submitLabel="Add Card"
+        submitLabel={common("addCard")}
         errors={errors}
         onSubmit={async (values) => {
           setErrors([]);
@@ -59,7 +62,7 @@ export default function NewCardPage() {
             const card = await createCard.mutateAsync(formValuesToInput(category, values));
             router.push(`/${category.key.toLowerCase()}/card/${card.id}`);
           } catch (e) {
-            setErrors([e instanceof Error ? e.message : "Failed to create card"]);
+            setErrors([e instanceof Error ? e.message : t("createFailed")]);
           }
         }}
       />

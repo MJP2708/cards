@@ -1,17 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { ListFilter, X, ArrowDownWideNarrow, ArrowUpWideNarrow } from "lucide-react";
-
-const SORT_OPTIONS = [
-  { value: "dateAdded", label: "Date added" },
-  { value: "askingPrice", label: "Price" },
-  { value: "name", label: "Name" },
-  { value: "series", label: "Series/Set" },
-  { value: "rarity", label: "Rarity" },
-  { value: "grade", label: "Condition/Grade" },
-  { value: "status", label: "Status" },
-];
+import { STATUS_VALUES, useStatusLabel } from "@/lib/statusLabels";
 
 export type ChipFilters = {
   status: string;
@@ -34,12 +26,24 @@ export function FilterChipBar({
   onChangeSort: (value: string) => void;
   onChangeOrder: (value: "asc" | "desc") => void;
 }) {
+  const t = useTranslations("inventory");
+  const statusLabel = useStatusLabel();
   const [open, setOpen] = useState(false);
 
+  const SORT_OPTIONS = [
+    { value: "dateAdded", label: t("sortDateAdded") },
+    { value: "askingPrice", label: t("sortPrice") },
+    { value: "name", label: t("sortName") },
+    { value: "series", label: t("sortSeries") },
+    { value: "rarity", label: t("sortRarity") },
+    { value: "grade", label: t("sortGrade") },
+    { value: "status", label: t("sortStatus") },
+  ];
+
   const chips: { key: keyof ChipFilters; label: string }[] = [];
-  if (filters.status) chips.push({ key: "status", label: filters.status });
-  if (filters.minPrice) chips.push({ key: "minPrice", label: `Min ฿${filters.minPrice}` });
-  if (filters.maxPrice) chips.push({ key: "maxPrice", label: `Max ฿${filters.maxPrice}` });
+  if (filters.status) chips.push({ key: "status", label: statusLabel(filters.status) });
+  if (filters.minPrice) chips.push({ key: "minPrice", label: t("chipMin", { amount: filters.minPrice }) });
+  if (filters.maxPrice) chips.push({ key: "maxPrice", label: t("chipMax", { amount: filters.maxPrice }) });
 
   function removeChip(key: keyof ChipFilters) {
     onChangeFilters({ ...filters, [key]: "" });
@@ -53,27 +57,28 @@ export function FilterChipBar({
           className="booth-target flex items-center gap-1.5 rounded-md border border-border-1 px-2.5 py-1.5 hover:bg-surface-1"
         >
           <ListFilter className="h-3.5 w-3.5" aria-hidden />
-          Filter
+          {t("filter")}
         </button>
         {open && (
           <div className="absolute left-0 top-full z-20 mt-1 w-64 space-y-3 rounded-md border border-border-1 bg-background p-3 shadow-lg">
             <label className="flex flex-col gap-1 text-xs">
-              Status
+              {t("status")}
               <select
                 value={filters.status}
                 onChange={(e) => onChangeFilters({ ...filters, status: e.target.value })}
                 className="rounded-md border border-border-1 px-2 py-1.5"
               >
-                <option value="">Any</option>
-                <option>In Stock</option>
-                <option>Reserved</option>
-                <option>On Hold</option>
-                <option>Sold</option>
+                <option value="">{t("any")}</option>
+                {STATUS_VALUES.map((s) => (
+                  <option key={s} value={s}>
+                    {statusLabel(s)}
+                  </option>
+                ))}
               </select>
             </label>
             <div className="flex gap-2">
               <label className="flex flex-1 flex-col gap-1 text-xs">
-                Min ฿
+                {t("minPrice")}
                 <input
                   type="number"
                   value={filters.minPrice}
@@ -82,7 +87,7 @@ export function FilterChipBar({
                 />
               </label>
               <label className="flex flex-1 flex-col gap-1 text-xs">
-                Max ฿
+                {t("maxPrice")}
                 <input
                   type="number"
                   value={filters.maxPrice}
@@ -95,7 +100,7 @@ export function FilterChipBar({
               onClick={() => setOpen(false)}
               className="w-full rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-dark"
             >
-              Done
+              {t("done")}
             </button>
           </div>
         )}
@@ -108,7 +113,7 @@ export function FilterChipBar({
           style={{ color: "var(--accent-dark)" }}
         >
           {chip.label}
-          <button onClick={() => removeChip(chip.key)} aria-label={`Remove ${chip.label} filter`}>
+          <button onClick={() => removeChip(chip.key)} aria-label={t("removeFilter", { label: chip.label })}>
             <X className="h-3 w-3" />
           </button>
         </span>
@@ -122,13 +127,13 @@ export function FilterChipBar({
         >
           {SORT_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>
-              Sort: {o.label}
+              {o.label}
             </option>
           ))}
         </select>
         <button
           onClick={() => onChangeOrder(order === "asc" ? "desc" : "asc")}
-          aria-label={order === "asc" ? "Ascending" : "Descending"}
+          aria-label={order === "asc" ? t("ascending") : t("descending")}
           className="rounded-md border border-border-1 p-1.5 hover:bg-surface-1"
         >
           {order === "asc" ? <ArrowUpWideNarrow className="h-4 w-4" /> : <ArrowDownWideNarrow className="h-4 w-4" />}

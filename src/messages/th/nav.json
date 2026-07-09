@@ -3,5 +3,14 @@
   "reports": "รายงาน",
   "checklist": "เช็คลิสต์",
   "scan": "สแกน",
-  "settings": "ตั้งค่า"
+  "settings": "ตั้งค่า",
+  "commandPaletteLabel": "แถบคำสั่งด่วน",
+  "searchPlaceholder": "ไปที่การ์ด หมวดหมู่ หรือหน้าอื่น…",
+  "noMatches": "ไม่พบรายการที่ตรงกัน",
+  "groupCards": "การ์ด",
+  "groupCategories": "หมวดหมู่",
+  "groupGoTo": "ไปที่",
+  "salesReports": "รายงานการขาย",
+  "preEventChecklist": "เช็คลิสต์ก่อนวันงาน",
+  "scanQr": "สแกนคิวอาร์โค้ด"
 }

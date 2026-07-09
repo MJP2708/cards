@@ -9,22 +9,6 @@ import { useOnboardingStore } from "@/store/onboardingStore";
 import { CategoryIcon } from "@/components/icons/CategoryIcon";
 import { HEADER_FONTS, ICON_SETS, type FieldDef, type ThemeTokens } from "@/lib/fieldSchema";
 
-const HEADER_FONT_LABELS: Record<ThemeTokens["headerFont"], string> = {
-  oswald: "Oswald (condensed, bold)",
-  barlowCondensed: "Barlow Condensed (clean, sporty)",
-  baloo2: "Baloo 2 (rounded, playful)",
-  cinzel: "Cinzel (serif, arcane)",
-  geist: "Geist (default, no display swap)",
-};
-
-const ICON_SET_LABELS: Record<ThemeTokens["iconSet"], string> = {
-  basketball: "Basketball",
-  soccer: "Soccer ball",
-  pokemon: "Energy bolt",
-  tcg: "Card stack",
-  neutral: "Neutral grid",
-};
-
 type DraftField = FieldDef & { optionsText: string };
 
 function emptyField(): DraftField {
@@ -35,6 +19,22 @@ export default function SettingsPage() {
   const t = useTranslations("settings");
   const common = useTranslations("common");
   const { data: categories } = useCategories();
+
+  const HEADER_FONT_LABELS: Record<ThemeTokens["headerFont"], string> = {
+    oswald: t("fontOswald"),
+    barlowCondensed: t("fontBarlowCondensed"),
+    baloo2: t("fontBaloo2"),
+    cinzel: t("fontCinzel"),
+    geist: t("fontGeist"),
+  };
+
+  const ICON_SET_LABELS: Record<ThemeTokens["iconSet"], string> = {
+    basketball: t("iconBasketball"),
+    soccer: t("iconSoccer"),
+    pokemon: t("iconPokemon"),
+    tcg: t("iconTcg"),
+    neutral: t("iconNeutral"),
+  };
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
 
@@ -98,13 +98,13 @@ export default function SettingsPage() {
       setDisplayName("");
       setFields([emptyField()]);
     } catch (err) {
-      setCreateError(err instanceof Error ? err.message : "Failed to create category");
+      setCreateError(err instanceof Error ? err.message : t("createCategoryFailed"));
     }
   }
 
   return (
     <div className="max-w-2xl space-y-8">
-      <h1 className="text-xl font-semibold">{t("title")}</h1>
+      <h1 className="font-display text-xl font-semibold">{t("title")}</h1>
 
       <section className="space-y-3 rounded-lg border border-border-1 p-4">
         <h2 className="text-sm font-semibold text-foreground/70">{t("currencyAndNegotiation")}</h2>
@@ -211,11 +211,11 @@ export default function SettingsPage() {
             <label className="flex flex-col gap-1">
               {t("motif")}
               <select value={motif} onChange={(e) => setMotif(e.target.value as typeof motif)} className="rounded-md border border-border-1 px-2 py-1.5">
-                <option value="none">None</option>
-                <option value="hardwood">Hardwood</option>
-                <option value="pitch">Pitch</option>
-                <option value="holo">Holo</option>
-                <option value="frame">Frame</option>
+                <option value="none">{t("motifNone")}</option>
+                <option value="hardwood">{t("motifHardwood")}</option>
+                <option value="pitch">{t("motifPitch")}</option>
+                <option value="holo">{t("motifHolo")}</option>
+                <option value="frame">{t("motifFrame")}</option>
               </select>
             </label>
             <label className="flex flex-col gap-1">
@@ -247,7 +247,7 @@ export default function SettingsPage() {
               </select>
             </label>
             <div className="flex items-end gap-2 pb-1.5">
-              <span className="text-xs text-foreground/50">Preview:</span>
+              <span className="text-xs text-foreground/50">{t("preview")}</span>
               <CategoryIcon iconSet={iconSet} className="h-5 w-5" style={{ color: accent }} />
             </div>
           </div>
@@ -258,13 +258,13 @@ export default function SettingsPage() {
               {fields.map((field, i) => (
                 <div key={i} className="flex flex-wrap items-center gap-1.5 text-xs">
                   <input
-                    placeholder="key"
+                    placeholder={t("fieldKeyPlaceholder")}
                     value={field.key}
                     onChange={(e) => setFields((fs) => fs.map((f, idx) => (idx === i ? { ...f, key: e.target.value } : f)))}
                     className="w-24 rounded-md border border-border-1 px-2 py-1"
                   />
                   <input
-                    placeholder="Label"
+                    placeholder={t("fieldLabelPlaceholder")}
                     value={field.label}
                     onChange={(e) => setFields((fs) => fs.map((f, idx) => (idx === i ? { ...f, label: e.target.value } : f)))}
                     className="w-32 rounded-md border border-border-1 px-2 py-1"
@@ -276,14 +276,14 @@ export default function SettingsPage() {
                     }
                     className="rounded-md border border-border-1 px-2 py-1"
                   >
-                    <option value="text">Text</option>
-                    <option value="number">Number</option>
-                    <option value="select">Select</option>
-                    <option value="textarea">Textarea</option>
+                    <option value="text">{t("fieldTypeText")}</option>
+                    <option value="number">{t("fieldTypeNumber")}</option>
+                    <option value="select">{t("fieldTypeSelect")}</option>
+                    <option value="textarea">{t("fieldTypeTextarea")}</option>
                   </select>
                   {field.type === "select" && (
                     <input
-                      placeholder="option1, option2"
+                      placeholder={t("fieldOptionsPlaceholder")}
                       value={field.optionsText}
                       onChange={(e) => setFields((fs) => fs.map((f, idx) => (idx === i ? { ...f, optionsText: e.target.value } : f)))}
                       className="w-40 rounded-md border border-border-1 px-2 py-1"
@@ -295,14 +295,14 @@ export default function SettingsPage() {
                       checked={field.required}
                       onChange={(e) => setFields((fs) => fs.map((f, idx) => (idx === i ? { ...f, required: e.target.checked } : f)))}
                     />
-                    required
+                    {t("required")}
                   </label>
                   <button
                     type="button"
                     onClick={() => setFields((fs) => fs.filter((_, idx) => idx !== i))}
                     className="text-foreground/40 hover:text-red-600"
                   >
-                    remove
+                    {t("remove")}
                   </button>
                 </div>
               ))}

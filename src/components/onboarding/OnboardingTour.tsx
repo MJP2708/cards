@@ -2,33 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
+import { useTranslations } from "next-intl";
 import { LayoutGrid, PackagePlus, CheckCircle2, FileBarChart, X } from "lucide-react";
 import { useOnboardingStore } from "@/store/onboardingStore";
 
-const STEPS = [
-  {
-    icon: LayoutGrid,
-    title: "Switch categories anytime",
-    body: "The tabs at the top switch between NBA, Football, or All Categories — the whole app re-themes (colors, icons, fonts) to match whichever you're in.",
-  },
-  {
-    icon: PackagePlus,
-    title: "Add a card in seconds",
-    body: "\"Add Card\" from any category list opens a short form grouped into Identity, Pricing & Status, and Photos — status and quantity are pre-filled with sensible defaults.",
-  },
-  {
-    icon: CheckCircle2,
-    title: "Mark a sale with one tap",
-    body: "Every row in the inventory list has its own \"Mark Sold\" button — no need to open the full card page. A quick popover asks for price and payment method.",
-  },
-  {
-    icon: FileBarChart,
-    title: "Reports & Dashboard live in the top nav",
-    body: "Generate an End-of-Day PDF or CSV anytime from Reports, and watch today's revenue and items sold update live on the Dashboard.",
-  },
-];
+const STEP_ICONS = [LayoutGrid, PackagePlus, CheckCircle2, FileBarChart];
 
 export function OnboardingTour() {
+  const t = useTranslations("onboarding");
   const hasSeenTour = useOnboardingStore((s) => s.hasSeenTour);
   const tourOpen = useOnboardingStore((s) => s.tourOpen);
   const openTour = useOnboardingStore((s) => s.openTour);
@@ -43,8 +24,13 @@ export function OnboardingTour() {
 
   if (!tourOpen) return null;
 
-  const current = STEPS[step];
-  const isLast = step === STEPS.length - 1;
+  const steps = STEP_ICONS.map((icon, i) => ({
+    icon,
+    title: t(`step${i + 1}Title`),
+    body: t(`step${i + 1}Body`),
+  }));
+  const current = steps[step];
+  const isLast = step === steps.length - 1;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
@@ -58,7 +44,7 @@ export function OnboardingTour() {
             markSeen();
             closeTour();
           }}
-          aria-label="Skip tour"
+          aria-label={t("skipTour")}
           className="absolute right-3 top-3 text-foreground/40 hover:text-foreground"
         >
           <X className="h-4 w-4" />
@@ -83,7 +69,7 @@ export function OnboardingTour() {
 
         <div className="mt-5 flex items-center justify-between">
           <div className="flex gap-1.5">
-            {STEPS.map((_, i) => (
+            {steps.map((_, i) => (
               <span
                 key={i}
                 className="h-1.5 w-1.5 rounded-full"
@@ -94,7 +80,7 @@ export function OnboardingTour() {
           <div className="flex gap-2">
             {step > 0 && (
               <button onClick={() => setStep((s) => s - 1)} className="rounded-md px-3 py-1.5 text-sm hover:bg-surface-1">
-                Back
+                {t("back")}
               </button>
             )}
             <button
@@ -108,7 +94,7 @@ export function OnboardingTour() {
               }}
               className="rounded-md bg-accent px-4 py-1.5 text-sm font-medium text-white hover:bg-accent-dark"
             >
-              {isLast ? "Done" : "Next"}
+              {isLast ? t("done") : t("next")}
             </button>
           </div>
         </div>

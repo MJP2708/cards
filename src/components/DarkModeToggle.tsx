@@ -12,7 +12,7 @@ export function DarkModeToggle() {
     <button
       type="button"
       onClick={() => setIsDark(!isDark)}
-      aria-label="Toggle dark mode"
+      aria-label={isDark ? t("lightMode") : t("darkMode")}
       className="booth-target rounded-md border border-border-1 px-2.5 py-1.5 text-sm hover:bg-surface-1"
     >
       {isDark ? t("lightMode") : t("darkMode")}

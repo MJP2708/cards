@@ -17,5 +17,13 @@
   "sold": "Sold",
   "darkMode": "Dark mode",
   "lightMode": "Light mode",
-  "boothMode": "Booth mode"
+  "boothMode": "Booth mode",
+  "liveStatus": "Live",
+  "offlineStatus": "Offline — showing cached data",
+  "offlineStatusWithQueue": "Offline — showing cached data ({count, plural, one {# change} other {# changes}} queued)",
+  "syncingStatus": "Syncing {count, plural, one {# change} other {# changes}}…",
+  "moreOptions": "More options",
+  "categorySwitcherLabel": "Category switcher",
+  "printLabel": "Print Label",
+  "qrCodeAlt": "QR code for {name}"
 }

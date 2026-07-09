@@ -3,27 +3,30 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
+import { useTranslations } from "next-intl";
 import { LayoutDashboard, FileBarChart, ClipboardList, ScanLine, Settings, Search } from "lucide-react";
 import { useCategories } from "@/hooks/useCategories";
 import { CategoryIcon } from "@/components/icons/CategoryIcon";
 import { useCommandPaletteStore } from "@/store/commandPaletteStore";
 import type { CardDTO } from "@/lib/data/types";
 
-const STATIC_PAGES = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/reports", label: "Sales Reports", icon: FileBarChart },
-  { href: "/checklist", label: "Pre-Event Checklist", icon: ClipboardList },
-  { href: "/scan", label: "Scan QR", icon: ScanLine },
-  { href: "/settings/categories", label: "Settings", icon: Settings },
-];
-
 export function CommandPalette() {
   const router = useRouter();
+  const t = useTranslations("nav");
+  const common = useTranslations("common");
   const { data: categories } = useCategories();
   const open = useCommandPaletteStore((s) => s.open);
   const setOpen = useCommandPaletteStore((s) => s.setOpen);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<CardDTO[]>([]);
+
+  const staticPages = [
+    { href: "/dashboard", label: t("dashboard"), icon: LayoutDashboard },
+    { href: "/reports", label: t("salesReports"), icon: FileBarChart },
+    { href: "/checklist", label: t("preEventChecklist"), icon: ClipboardList },
+    { href: "/scan", label: t("scanQr"), icon: ScanLine },
+    { href: "/settings/categories", label: t("settings"), icon: Settings },
+  ];
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -58,7 +61,7 @@ export function CommandPalette() {
     <Command.Dialog
       open={open}
       onOpenChange={setOpen}
-      label="Command palette"
+      label={t("commandPaletteLabel")}
       className="fixed left-1/2 top-24 z-50 w-full max-w-lg -translate-x-1/2 overflow-hidden rounded-lg border border-border-1 bg-background shadow-2xl"
     >
       <div className="flex items-center gap-2 border-b border-border-1 px-3">
@@ -66,15 +69,15 @@ export function CommandPalette() {
         <Command.Input
           value={query}
           onValueChange={setQuery}
-          placeholder="Jump to a card, category, or page…"
+          placeholder={t("searchPlaceholder")}
           className="w-full bg-transparent py-3 text-sm outline-none"
         />
       </div>
       <Command.List className="max-h-80 overflow-y-auto p-2">
-        <Command.Empty className="px-3 py-6 text-center text-sm text-foreground/50">No matches.</Command.Empty>
+        <Command.Empty className="px-3 py-6 text-center text-sm text-foreground/50">{t("noMatches")}</Command.Empty>
 
         {results.length > 0 && (
-          <Command.Group heading="Cards" className="mb-1 px-2 text-xs font-medium uppercase text-foreground/40">
+          <Command.Group heading={t("groupCards")} className="mb-1 px-2 text-xs font-medium uppercase text-foreground/40">
             {results.map((card) => (
               <Command.Item
                 key={card.id}
@@ -88,12 +91,12 @@ export function CommandPalette() {
           </Command.Group>
         )}
 
-        <Command.Group heading="Categories" className="mb-1 px-2 text-xs font-medium uppercase text-foreground/40">
+        <Command.Group heading={t("groupCategories")} className="mb-1 px-2 text-xs font-medium uppercase text-foreground/40">
           <Command.Item
             onSelect={() => go("/all")}
             className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm data-[selected=true]:bg-surface-1"
           >
-            All Categories
+            {common("allCategories")}
           </Command.Item>
           {categories?.map((c) => (
             <Command.Item
@@ -107,8 +110,8 @@ export function CommandPalette() {
           ))}
         </Command.Group>
 
-        <Command.Group heading="Go to" className="px-2 text-xs font-medium uppercase text-foreground/40">
-          {STATIC_PAGES.map((page) => (
+        <Command.Group heading={t("groupGoTo")} className="px-2 text-xs font-medium uppercase text-foreground/40">
+          {staticPages.map((page) => (
             <Command.Item
               key={page.href}
               onSelect={() => go(page.href)}

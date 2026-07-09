@@ -17,5 +17,13 @@
   "sold": "ขายแล้ว",
   "darkMode": "โหมดมืด",
   "lightMode": "โหมดสว่าง",
-  "boothMode": "โหมดบูธ"
+  "boothMode": "โหมดบูธ",
+  "liveStatus": "ออนไลน์",
+  "offlineStatus": "ออฟไลน์ — แสดงข้อมูลที่แคชไว้",
+  "offlineStatusWithQueue": "ออฟไลน์ — แสดงข้อมูลที่แคชไว้ ({count} รายการรอซิงค์)",
+  "syncingStatus": "กำลังซิงค์ {count} รายการ…",
+  "moreOptions": "ตัวเลือกเพิ่มเติม",
+  "categorySwitcherLabel": "ตัวสลับหมวดหมู่",
+  "printLabel": "พิมพ์ป้าย",
+  "qrCodeAlt": "คิวอาร์โค้ดของ {name}"
 }

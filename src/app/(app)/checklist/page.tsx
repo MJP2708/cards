@@ -1,10 +1,13 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
 import { useCards, useUpdateCard } from "@/lib/data/cards";
 
 export default function ChecklistPage() {
+  const t = useTranslations("checklist");
+  const common = useTranslations("common");
   const { data: categories } = useCategories();
   const { data: cards, isLoading } = useCards({ status: "In Stock" });
   const updateCard = useUpdateCard();
@@ -18,17 +21,15 @@ export default function ChecklistPage() {
     return map;
   }, [cards]);
 
-  if (isLoading) return <p className="text-sm text-foreground/60">Loading…</p>;
+  if (isLoading) return <p className="text-sm text-foreground/60">{common("loading")}</p>;
 
   const totalPacked = cards?.filter((c) => c.packed).length ?? 0;
 
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold">Pre-Event Checklist</h1>
-        <p className="text-sm text-foreground/60">
-          {totalPacked} of {cards?.length ?? 0} in-stock cards packed
-        </p>
+        <h1 className="font-display text-xl font-semibold">{t("title")}</h1>
+        <p className="text-sm text-foreground/60">{t("summary", { packed: totalPacked, total: cards?.length ?? 0 })}</p>
       </div>
 
       {Array.from(grouped.entries()).map(([categoryKey, catCards]) => {
@@ -38,7 +39,7 @@ export default function ChecklistPage() {
           <section key={categoryKey} className="rounded-lg border border-border-1 p-4">
             <h2 className="mb-2 flex items-center gap-2 text-sm font-semibold">
               <span className="h-2 w-2 rounded-full" style={{ background: category?.themeTokens.accent ?? "#64748B" }} />
-              {category?.displayName ?? categoryKey} — {packedCount}/{catCards!.length} packed
+              {t("categorySummary", { category: category?.displayName ?? categoryKey, packed: packedCount, total: catCards!.length })}
             </h2>
             <ul className="divide-y divide-border-1">
               {catCards!.map((card) => (
@@ -52,7 +53,7 @@ export default function ChecklistPage() {
                       checked={card.packed}
                       onChange={(e) => updateCard.mutate({ id: card.id, input: { packed: e.target.checked } })}
                     />
-                    Packed
+                    {t("packed")}
                   </label>
                 </li>
               ))}
@@ -60,7 +61,7 @@ export default function ChecklistPage() {
           </section>
         );
       })}
-      {(cards?.length ?? 0) === 0 && <p className="text-sm text-foreground/50">No in-stock cards to pack.</p>}
+      {(cards?.length ?? 0) === 0 && <p className="text-sm text-foreground/50">{t("noCards")}</p>}
     </div>
   );
 }

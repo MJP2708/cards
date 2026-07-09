@@ -14,6 +14,7 @@
   --secondary: #94a3b8;
   --category-surface: transparent;
   --font-display: var(--font-geist-sans);
+  --font-body: var(--font-geist-sans); /* swapped to Noto Sans Thai for the Thai locale by ThemeEffect */
 }
 
 @theme inline {
@@ -25,9 +26,10 @@
   --color-accent-dark: var(--accent-dark);
   --color-secondary: var(--secondary);
   --color-category-surface: var(--category-surface);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-body);
   --font-mono: var(--font-geist-mono);
   --font-display: var(--font-display);
+  --font-body: var(--font-body);
 
   /* Display scale — headers only. Body/data text stays on Tailwind's default scale. */
   --text-display-sm: 1.25rem;
@@ -45,10 +47,19 @@
   --border-1: #27272a;
 }
 
+/* Server-rendered so there's no flash of the Latin body font before the
+   client-side ThemeEffect confirms the locale. Category header fonts still
+   need the client effect (categories load client-side), but the body font
+   is correct from first paint. */
+:root[data-locale="th"] {
+  --font-body: var(--font-noto-sans-thai);
+  --font-display: var(--font-noto-sans-thai);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-body), Arial, Helvetica, sans-serif;
 }
 
 /* Category motifs — decorative only, never behind body text, so contrast stays constant. */

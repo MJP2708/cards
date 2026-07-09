@@ -120,7 +120,7 @@ export default function DashboardPage() {
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="category" tick={{ fill: colors.text, fontSize: 12 }} axisLine={{ stroke: colors.grid }} tickLine={false} />
             <YAxis tick={{ fill: colors.text, fontSize: 12 }} axisLine={false} tickLine={false} width={48} />
-            <Tooltip formatter={(v) => [`฿${Number(v).toLocaleString()}`, "Revenue"]} />
+            <Tooltip formatter={(v) => [`฿${Number(v).toLocaleString()}`, t("tooltipRevenue")]} />
             <Bar dataKey="revenue" fill={colors.blue} radius={[4, 4, 0, 0]} maxBarSize={48} />
           </BarChart>
         </ChartCard>
@@ -130,7 +130,7 @@ export default function DashboardPage() {
             <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
             <XAxis dataKey="category" tick={{ fill: colors.text, fontSize: 12 }} axisLine={{ stroke: colors.grid }} tickLine={false} />
             <YAxis tick={{ fill: colors.text, fontSize: 12 }} axisLine={false} tickLine={false} width={48} />
-            <Tooltip formatter={(v) => [`฿${Number(v).toLocaleString()}`, "Profit"]} />
+            <Tooltip formatter={(v) => [`฿${Number(v).toLocaleString()}`, t("tooltipProfit")]} />
             <Bar dataKey="profit" fill={colors.aqua} radius={[4, 4, 0, 0]} maxBarSize={48} />
           </BarChart>
         </ChartCard>
@@ -147,7 +147,7 @@ export default function DashboardPage() {
               tickLine={false}
               width={110}
             />
-            <Tooltip formatter={(v) => [`฿${Number(v).toLocaleString()}`, "Revenue"]} />
+            <Tooltip formatter={(v) => [`฿${Number(v).toLocaleString()}`, t("tooltipRevenue")]} />
             <Bar dataKey="revenue" fill={colors.blue} radius={[0, 4, 4, 0]} maxBarSize={16} />
           </BarChart>
         </ChartCard>
@@ -164,7 +164,7 @@ export default function DashboardPage() {
               tickLine={false}
               width={90}
             />
-            <Tooltip formatter={(v) => [`฿${Number(v).toLocaleString()}`, "Profit"]} />
+            <Tooltip formatter={(v) => [`฿${Number(v).toLocaleString()}`, t("tooltipProfit")]} />
             <Bar dataKey="profit" radius={[0, 4, 4, 0]} maxBarSize={16}>
               {data.cardTypePerformance.map((entry) => (
                 <Cell key={entry.cardType} fill={entry.profit >= 0 ? colors.blue : colors.red} />
@@ -179,7 +179,7 @@ export default function DashboardPage() {
           <CartesianGrid stroke={colors.grid} strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="date" tick={{ fill: colors.text, fontSize: 12 }} axisLine={{ stroke: colors.grid }} tickLine={false} />
           <YAxis tick={{ fill: colors.text, fontSize: 12 }} axisLine={false} tickLine={false} width={56} />
-          <Tooltip formatter={(v) => [`฿${Number(v).toLocaleString()}`, "Cumulative Profit"]} />
+          <Tooltip formatter={(v) => [`฿${Number(v).toLocaleString()}`, t("tooltipCumulativeProfit")]} />
           <Line type="monotone" dataKey="cumulativeProfit" stroke={colors.blue} strokeWidth={2} dot={{ r: 3 }} />
         </LineChart>
       </ChartCard>

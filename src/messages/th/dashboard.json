@@ -8,5 +8,8 @@
   "profitByCategory": "กำไรตามหมวดหมู่",
   "topSelling": "การ์ดขายดี",
   "cardTypePerformance": "ผลงานตามประเภทการ์ด (กำไร)",
-  "cumulativeProfit": "กำไรสะสมตลอดงาน"
+  "cumulativeProfit": "กำไรสะสมตลอดงาน",
+  "tooltipRevenue": "รายได้",
+  "tooltipProfit": "กำไร",
+  "tooltipCumulativeProfit": "กำไรสะสม"
 }

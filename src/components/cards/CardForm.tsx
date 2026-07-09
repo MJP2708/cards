@@ -1,10 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { IdCard, Tag, ImagePlus } from "lucide-react";
 import type { CategoryDTO } from "@/lib/categories";
 import type { CardDTO } from "@/lib/data/types";
 import { PhotoUploadField } from "@/components/cards/PhotoUploadField";
+import { STATUS_VALUES, useStatusLabel } from "@/lib/statusLabels";
+import { fieldLabelKey } from "@/lib/fieldLabels";
 
 export type CardFormValues = {
   name: string;
@@ -110,6 +113,8 @@ export function CardForm({
   submitLabel: string;
   errors?: string[];
 }) {
+  const t = useTranslations("cardForm");
+  const statusLabel = useStatusLabel();
   const [values, setValues] = useState(initial);
 
   function update<K extends keyof CardFormValues>(key: K, value: CardFormValues[K]) {
@@ -123,6 +128,11 @@ export function CardForm({
   const coreLabels: Record<string, string> = Object.fromEntries(
     category.fieldSchema.filter((f) => f.kind === "core").map((f) => [f.key, f.label])
   );
+
+  function labelFor(key: string, dbLabel: string) {
+    const translationKey = fieldLabelKey(key);
+    return translationKey ? t(translationKey) : dbLabel;
+  }
 
   return (
     <form
@@ -140,39 +150,39 @@ export function CardForm({
         </div>
       )}
 
-      <FormSection icon={IdCard} title="Identity">
+      <FormSection icon={IdCard} title={t("sectionIdentity")}>
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>Name</span>
+          <span className={labelClass}>{t("fieldName")}</span>
           <input required autoFocus className={inputClass} value={values.name} onChange={(e) => update("name", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>Series / Set</span>
+          <span className={labelClass}>{t("fieldSeriesSet")}</span>
           <input required className={inputClass} value={values.series} onChange={(e) => update("series", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>Year</span>
+          <span className={labelClass}>{t("fieldYear")}</span>
           <input type="number" className={inputClass} value={values.year} onChange={(e) => update("year", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>Card Number</span>
+          <span className={labelClass}>{t("fieldCardNumber")}</span>
           <input className={inputClass} value={values.cardNumber} onChange={(e) => update("cardNumber", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>{coreLabels.cardType ?? "Card Type"}</span>
+          <span className={labelClass}>{labelFor("cardType", coreLabels.cardType ?? t("fieldCardType"))}</span>
           <input className={inputClass} value={values.cardType} onChange={(e) => update("cardType", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>Rarity / Print Run</span>
+          <span className={labelClass}>{t("fieldRarity")}</span>
           <input className={inputClass} value={values.rarity} onChange={(e) => update("rarity", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>Grade / Condition</span>
+          <span className={labelClass}>{t("fieldGrade")}</span>
           <input className={inputClass} value={values.grade} onChange={(e) => update("grade", e.target.value)} />
         </label>
 
@@ -181,7 +191,7 @@ export function CardForm({
           .map((field) => (
             <label key={field.key} className="flex flex-col gap-1">
               <span className={labelClass}>
-                {field.label}
+                {labelFor(field.key, field.label)}
                 {field.required && " *"}
               </span>
               {field.type === "select" ? (
@@ -192,7 +202,7 @@ export function CardForm({
                   onChange={(e) => updateAttribute(field.key, e.target.value)}
                 >
                   <option value="" disabled>
-                    Select…
+                    {t("selectPlaceholder")}
                   </option>
                   {field.options?.map((opt) => (
                     <option key={opt} value={opt}>
@@ -212,44 +222,45 @@ export function CardForm({
           ))}
       </FormSection>
 
-      <FormSection icon={Tag} title="Pricing & Status">
+      <FormSection icon={Tag} title={t("sectionPricingStatus")}>
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>Cost Basis (THB)</span>
+          <span className={labelClass}>{t("fieldCostBasis")}</span>
           <input required type="number" step="0.01" className={inputClass} value={values.costBasis} onChange={(e) => update("costBasis", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>Asking Price (THB)</span>
+          <span className={labelClass}>{t("fieldAskingPrice")}</span>
           <input required type="number" step="0.01" className={inputClass} value={values.askingPrice} onChange={(e) => update("askingPrice", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>Quantity</span>
+          <span className={labelClass}>{t("fieldQuantity")}</span>
           <input required type="number" min="1" className={inputClass} value={values.quantity} onChange={(e) => update("quantity", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>Status</span>
+          <span className={labelClass}>{t("fieldStatus")}</span>
           <select className={inputClass} value={values.status} onChange={(e) => update("status", e.target.value as CardDTO["status"])}>
-            <option>In Stock</option>
-            <option>Reserved</option>
-            <option>On Hold</option>
-            <option>Sold</option>
+            {STATUS_VALUES.map((s) => (
+              <option key={s} value={s}>
+                {statusLabel(s)}
+              </option>
+            ))}
           </select>
         </label>
       </FormSection>
 
-      <FormSection icon={ImagePlus} title="Photos & Notes">
-        <PhotoUploadField label="Front Photo" value={values.photoFront} onChange={(url) => update("photoFront", url)} />
-        <PhotoUploadField label="Back Photo" value={values.photoBack} onChange={(url) => update("photoBack", url)} />
+      <FormSection icon={ImagePlus} title={t("sectionPhotosNotes")}>
+        <PhotoUploadField label={t("frontPhoto")} value={values.photoFront} onChange={(url) => update("photoFront", url)} />
+        <PhotoUploadField label={t("backPhoto")} value={values.photoBack} onChange={(url) => update("photoBack", url)} />
 
         <label className="flex flex-col gap-1">
-          <span className={labelClass}>QR Code (optional, unique)</span>
+          <span className={labelClass}>{t("fieldQrCode")}</span>
           <input className={inputClass} value={values.qrCode} onChange={(e) => update("qrCode", e.target.value)} />
         </label>
 
         <label className="flex flex-col gap-1 sm:col-span-2">
-          <span className={labelClass}>Buyer Note</span>
+          <span className={labelClass}>{t("fieldBuyerNote")}</span>
           <textarea className={inputClass} rows={2} value={values.buyerNote} onChange={(e) => update("buyerNote", e.target.value)} />
         </label>
       </FormSection>

@@ -3,5 +3,14 @@
   "reports": "Reports",
   "checklist": "Checklist",
   "scan": "Scan",
-  "settings": "Settings"
+  "settings": "Settings",
+  "commandPaletteLabel": "Command palette",
+  "searchPlaceholder": "Jump to a card, category, or page…",
+  "noMatches": "No matches.",
+  "groupCards": "Cards",
+  "groupCategories": "Categories",
+  "groupGoTo": "Go to",
+  "salesReports": "Sales Reports",
+  "preEventChecklist": "Pre-Event Checklist",
+  "scanQr": "Scan QR"
 }

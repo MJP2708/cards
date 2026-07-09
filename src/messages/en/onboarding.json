@@ -1,0 +1,14 @@
+{
+  "step1Title": "Switch categories anytime",
+  "step1Body": "The tabs at the top switch between NBA, Football, or All Categories — the whole app re-themes (colors, icons, fonts) to match whichever you're in.",
+  "step2Title": "Add a card in seconds",
+  "step2Body": "\"Add Card\" from any category list opens a short form grouped into Identity, Pricing & Status, and Photos — status and quantity are pre-filled with sensible defaults.",
+  "step3Title": "Mark a sale with one tap",
+  "step3Body": "Every row in the inventory list has its own \"Mark Sold\" button — no need to open the full card page. A quick popover asks for price and payment method.",
+  "step4Title": "Reports & Dashboard live in the top nav",
+  "step4Body": "Generate an End-of-Day PDF or CSV anytime from Reports, and watch today's revenue and items sold update live on the Dashboard.",
+  "skipTour": "Skip tour",
+  "back": "Back",
+  "next": "Next",
+  "done": "Done"
+}

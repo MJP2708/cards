@@ -23,8 +23,8 @@ export function CategorySwitcher() {
   const tabs = [{ key: "all", displayName: t("allCategories"), themeTokens: ALL_TAB_THEME }, ...(categories ?? [])];
 
   return (
-    <nav className="flex gap-1 overflow-x-auto" aria-label="Category switcher">
-      {isLoading && <span className="text-sm text-foreground/50 px-2 py-1.5">Loading categories…</span>}
+    <nav className="flex gap-1 overflow-x-auto" aria-label={t("categorySwitcherLabel")}>
+      {isLoading && <span className="text-sm text-foreground/50 px-2 py-1.5">{t("loading")}</span>}
       {tabs.map((tab) => {
         const href = tabHref(tab.key);
         const isActive = activeSegment.toLowerCase() === tab.key.toLowerCase();

@@ -1,0 +1,9 @@
+{
+  "title": "Scan Card QR",
+  "notFound": "No card found for code “{code}”.",
+  "lookupFailed": "Lookup failed. Check your connection and try again.",
+  "cameraUnavailable": "Camera access is unavailable. Use the manual code entry below instead.",
+  "lookingUp": "Looking up card…",
+  "manualPlaceholder": "Or type the code manually",
+  "go": "Go"
+}

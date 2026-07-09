@@ -2,7 +2,20 @@ import { getRequestConfig } from "next-intl/server";
 import { cookies } from "next/headers";
 import { SUPPORTED_LOCALES, DEFAULT_LOCALE, LOCALE_COOKIE, type Locale } from "./locales";
 
-const NAMESPACES = ["common", "nav", "dashboard", "reports", "settings"] as const;
+const NAMESPACES = [
+  "common",
+  "nav",
+  "dashboard",
+  "reports",
+  "settings",
+  "inventory",
+  "cardForm",
+  "cardDetail",
+  "dialogs",
+  "checklist",
+  "scan",
+  "onboarding",
+] as const;
 
 async function loadMessages(locale: Locale) {
   const modules = await Promise.all(
