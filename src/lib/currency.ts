@@ -9,3 +9,8 @@ export function formatUsdHint(amountThb: number, usdExchangeRate: number | null 
   if (usd === null) return null;
   return `≈ $${usd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
 }
+
+export function fromUsd(amountUsd: number, usdExchangeRate: number | null | undefined): number | null {
+  if (!usdExchangeRate) return null;
+  return amountUsd * usdExchangeRate;
+}

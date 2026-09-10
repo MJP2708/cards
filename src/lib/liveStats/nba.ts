@@ -37,8 +37,8 @@ function average(lines: NbaStatLine[], field: AverageableStat): string {
 }
 
 export async function fetchNbaStats(params: { playerName: string; year: number | null }): Promise<LiveStatsResult> {
-  if (!hasApiSportsKey("nba")) {
-    return { ok: false, error: missingKeyError("nba") };
+  if (!hasApiSportsKey()) {
+    return { ok: false, error: missingKeyError() };
   }
 
   // API-NBA's search matches a single name field and wants 3+ characters, so a full

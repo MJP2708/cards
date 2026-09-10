@@ -45,5 +45,9 @@
   "reasonHotNoNote": "Currently flagged as a hot card — reprice before quoting.",
   "reasonCompsConsistent": "Comps are consistent around ฿{price}.",
   "reasonCompsRange": "Comps range from ฿{min} to ฿{max}, suggesting some room to negotiate within that band.",
-  "reasonNoComps": "No comps logged yet — add some from eBay/130point/PWCC (sports) or TCGplayer/PriceCharting (TCG) to back up this price."
+  "reasonNoComps": "No comps logged yet — add some from eBay/130point/PWCC (sports) or TCGplayer/PriceCharting (TCG) to back up this price.",
+  "refreshComps": "Refresh comps",
+  "refreshingComps": "Fetching…",
+  "refreshCompsFailed": "Could not fetch comps.",
+  "compsAutoNote": "Comps marked \"eBay (auto)\" are asking prices from active listings, auto-matched by search — verify before pricing from them."
 }

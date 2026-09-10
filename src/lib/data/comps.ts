@@ -25,3 +25,16 @@ export function useDeleteComp(cardId: string) {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["card", cardId] }),
   });
 }
+
+export function useRefreshComps(cardId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (force: boolean = false) => {
+      const res = await fetch(`/api/cards/${cardId}/refresh-comps?force=${force}`, { method: "POST" });
+      const body = await res.json();
+      if (!res.ok) throw new Error(body.error ?? "Failed to refresh comps");
+      return body as { cached: boolean; matched?: number; query?: string };
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["card", cardId] }),
+  });
+}

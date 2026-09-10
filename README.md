@@ -42,14 +42,13 @@ via Settings — category-based theming, offline resilience, sales reporting
    required, everything else works without these):
 
    ```bash
-   API_NBA_KEY='...'        # basketball — https://api-nba.com
-   API_FOOTBALL_KEY='...'   # soccer     — https://api-football.com
+   API_SPORTS_KEY='...'   # https://api-sports.io — covers both sports
    ```
 
-   Both sports are [API-Sports](https://api-sports.io) products, but each is a
-   separate subscription with its own key and its own 100 requests/day free tier.
-   Set either one on its own if you only care about that sport — the other simply
-   reports its missing variable when you hit "Refresh Stats".
+   Register once at [api-sports.io](https://api-sports.io) and the single account key
+   authenticates every sport they publish — API-NBA for basketball and API-Football
+   for soccer both use it, only the hostname differs. Subscribe to each API from the
+   same dashboard; each keeps its own 100 requests/day free-tier quota.
 
    **These are the only API keys the app uses.** Every enrichment feature degrades
    gracefully without them: worksheet import still works, cards still save with all
@@ -61,8 +60,8 @@ via Settings — category-based theming, offline resilience, sales reporting
    | `DATABASE_URL` | everything (pooled runtime connection) | app cannot start |
    | `DIRECT_URL` | `prisma migrate` only | migrations fail; app runs fine |
    | `BLOB_READ_WRITE_TOKEN` | card photo upload | upload button fails; URL fields still work |
-   | `API_NBA_KEY` | NBA live stats + import enrichment | NBA rows flagged Needs Review |
-   | `API_FOOTBALL_KEY` | Football live stats + import enrichment | Football rows flagged Needs Review |
+   | `API_SPORTS_KEY` | NBA + Football live stats and import enrichment | rows flagged Needs Review |
+   | `EBAY_CLIENT_ID` / `EBAY_CLIENT_SECRET` | eBay price comps | "Refresh comps" reports the missing variables |
 
 4. **Run the migration and seed data:**
 
@@ -126,6 +125,25 @@ until you confirm. The flow is:
 5. **Review.** The summary lists exactly which cards need attention and links to each.
 
 Past imports are recorded and readable at `GET /api/import`.
+
+### eBay price comps
+
+The Fact Sheet's "Refresh comps" button searches eBay for `{year} {series} {name}
+{cardNumber}` and stores the matches as price comps. Two limits are deliberate and
+worth understanding before you price anything from them:
+
+- **These are asking prices, not sold prices.** The Browse API — the one available to
+  an ordinary developer account — searches *active listings*. Sold comps require the
+  limited-release Marketplace Insights API, which needs a business-case application
+  to eBay. An asking price is a much weaker signal than a sale.
+- **Matches are made from search text**, so they are best-effort guesses. They are
+  stored under the distinct source `eBay (auto)` and carry a warning in the UI, so
+  they can never be confused with a comp you logged yourself. Refreshing replaces
+  only the auto-fetched comps and leaves your manual ones untouched.
+
+eBay quotes USD while this app stores THB, so a **THB-per-USD rate must be set in
+Settings** before comps can be fetched — without it the endpoint refuses rather than
+writing dollar figures into baht fields. Results are cached for an hour per card.
 
 **What is *not* auto-fetched: card images.** Sports card image matching via
 marketplace search titles is unreliable — seller-written titles are inconsistent and

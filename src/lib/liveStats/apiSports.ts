@@ -1,32 +1,30 @@
-// Both sports are API-Sports products, but each one is a separate subscription with
-// its own key and its own daily quota — registering through a product dashboard
-// (api-football.com, api-nba.com) gives you one key per API, not one key for all.
+// A single API-Sports account key works across every sport they publish — only the
+// hostname changes per product (v3.football, v2.nba, ...). Each API still has its own
+// subscription and its own daily quota; the credential is what's shared.
 // https://api-sports.io
 export const API_SPORTS = {
-  nba: {
-    host: "v2.nba.api-sports.io",
-    label: "API-NBA",
-    envVar: "API_NBA_KEY",
-    // Read via a literal `process.env.X` rather than a dynamic `process.env[envVar]`
-    // lookup: Next.js only special-cases the literal form, and it stays greppable.
-    key: () => process.env.API_NBA_KEY,
-  },
-  football: {
-    host: "v3.football.api-sports.io",
-    label: "API-Football",
-    envVar: "API_FOOTBALL_KEY",
-    key: () => process.env.API_FOOTBALL_KEY,
-  },
+  nba: { host: "v2.nba.api-sports.io", label: "API-NBA" },
+  football: { host: "v3.football.api-sports.io", label: "API-Football" },
 } as const;
 
 export type ApiSport = keyof typeof API_SPORTS;
 
-export function hasApiSportsKey(sport: ApiSport) {
-  return Boolean(API_SPORTS[sport].key());
+export const API_SPORTS_ENV_VAR = "API_SPORTS_KEY";
+
+/**
+ * Read via a literal `process.env.X` rather than a dynamic lookup: Next.js only
+ * special-cases the literal form, and it keeps the variable greppable.
+ */
+export function apiSportsKey() {
+  return process.env.API_SPORTS_KEY;
 }
 
-export function missingKeyError(sport: ApiSport) {
-  return `${API_SPORTS[sport].envVar} is not configured on the server.`;
+export function hasApiSportsKey() {
+  return Boolean(apiSportsKey());
+}
+
+export function missingKeyError() {
+  return `${API_SPORTS_ENV_VAR} is not configured on the server.`;
 }
 
 /**
@@ -36,9 +34,9 @@ export function missingKeyError(sport: ApiSport) {
  * Fact Sheet shows the real reason.
  */
 export async function apiSportsFetch(sport: ApiSport, path: string) {
-  const { host, label, key } = API_SPORTS[sport];
+  const { host, label } = API_SPORTS[sport];
   const res = await fetch(`https://${host}${path}`, {
-    headers: { "x-apisports-key": key() ?? "" },
+    headers: { "x-apisports-key": apiSportsKey() ?? "" },
   });
   if (!res.ok) throw new Error(`${label} request failed (${res.status})`);
 

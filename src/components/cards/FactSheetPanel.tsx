@@ -22,7 +22,7 @@ import {
 import type { CardDetailDTO } from "@/lib/data/types";
 import type { CategoryDTO } from "@/lib/categories";
 import { useUpdateCard } from "@/lib/data/cards";
-import { useCreateComp, useDeleteComp } from "@/lib/data/comps";
+import { useCreateComp, useDeleteComp, useRefreshComps } from "@/lib/data/comps";
 import { useSettings } from "@/lib/data/settings";
 import { useRefreshStats } from "@/lib/data/liveStats";
 import { COMP_SOURCES } from "@/lib/validation/priceComp";
@@ -124,18 +124,40 @@ function CompsSection({ card }: { card: CardDetailDTO }) {
   const relativeTime = useRelativeTime();
   const createComp = useCreateComp(card.id);
   const deleteComp = useDeleteComp(card.id);
+  const refreshComps = useRefreshComps(card.id);
   const [adding, setAdding] = useState(false);
+  const [compError, setCompError] = useState<string | null>(null);
   const [compSource, setCompSource] = useState<(typeof COMP_SOURCES)[number]>("Manual");
   const [compPrice, setCompPrice] = useState("");
   const [compUrl, setCompUrl] = useState("");
 
   const latestCompAt = card.priceComps[0]?.fetchedAt;
+  const hasAutoComps = card.priceComps.some((comp) => comp.source === "eBay (auto)");
+
+  async function handleRefreshComps() {
+    setCompError(null);
+    try {
+      await refreshComps.mutateAsync(false);
+    } catch (e) {
+      setCompError(e instanceof Error ? e.message : t("refreshCompsFailed"));
+    }
+  }
 
   return (
     <Section icon={Receipt} title={t("comps")} help={t("compsHelp")}>
       {latestCompAt && (
         <p className="text-xs text-amber-600 dark:text-amber-400">{t("compsLastAdded", { time: relativeTime(new Date(latestCompAt)) })}</p>
       )}
+      <button
+        onClick={handleRefreshComps}
+        disabled={refreshComps.isPending}
+        className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-border-1 px-2 py-1 text-xs hover:bg-surface-1 disabled:opacity-50"
+      >
+        <RefreshCw className={`h-3 w-3 ${refreshComps.isPending ? "animate-spin" : ""}`} />
+        {refreshComps.isPending ? t("refreshingComps") : t("refreshComps")}
+      </button>
+      {compError && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{compError}</p>}
+      {hasAutoComps && <p className="mt-1 text-xs text-foreground/50">{t("compsAutoNote")}</p>}
       <ul className="space-y-1 text-sm">
         {card.priceComps.map((comp) => (
           <li key={comp.id} className="flex items-center justify-between gap-2">

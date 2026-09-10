@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { fetchLiveStats } from "@/lib/liveStats";
-import { API_SPORTS, type ApiSport } from "@/lib/liveStats/apiSports";
+import { API_SPORTS_ENV_VAR, apiSportsKey, type ApiSport } from "@/lib/liveStats/apiSports";
 
 /**
  * Enrichment runs in resumable chunks rather than one long pass: on Vercel a
@@ -29,10 +29,11 @@ function sleep(ms: number) {
 
 /** Which categories can actually be enriched right now, given configured keys. */
 export function enrichmentAvailability() {
-  return Object.entries(CATEGORY_TO_SPORT).map(([category, sport]) => ({
+  const configured = Boolean(apiSportsKey());
+  return Object.keys(CATEGORY_TO_SPORT).map((category) => ({
     category,
-    envVar: API_SPORTS[sport].envVar,
-    configured: Boolean(API_SPORTS[sport].key()),
+    envVar: API_SPORTS_ENV_VAR,
+    configured,
   }));
 }
 
@@ -59,7 +60,7 @@ export async function enrichNextChunk(batchId: string, limit = ENRICH_CHUNK_SIZE
       });
       continue;
     }
-    if (!API_SPORTS[sport].key()) {
+    if (!apiSportsKey()) {
       await prisma.card.update({
         where: { id: card.id },
         data: { enrichmentStatus: "skipped" },

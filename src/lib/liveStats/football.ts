@@ -10,8 +10,8 @@ export async function fetchFootballStats(params: {
   team: string | null;
   year: number | null;
 }): Promise<LiveStatsResult> {
-  if (!hasApiSportsKey("football")) {
-    return { ok: false, error: missingKeyError("football") };
+  if (!hasApiSportsKey()) {
+    return { ok: false, error: missingKeyError() };
   }
   if (!params.team) {
     return { ok: false, error: "Add a team on this card first — team is required to look up a player." };
