@@ -1,5 +1,5 @@
 export type LiveStatsSnapshot = {
-  provider: "balldontlie" | "api-football";
+  provider: "api-nba" | "api-football";
   playerName: string;
   team: string | null;
   position: string | null;

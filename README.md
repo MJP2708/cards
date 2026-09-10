@@ -42,9 +42,14 @@ via Settings — category-based theming, offline resilience, sales reporting
    required, everything else works without these):
 
    ```bash
-   BALLDONTLIE_API_KEY='...'   # NBA season averages — https://www.balldontlie.io
-   API_FOOTBALL_KEY='...'      # Football/soccer season stats — https://www.api-football.com (free tier: 100 req/day)
+   API_NBA_KEY='...'        # basketball — https://api-nba.com
+   API_FOOTBALL_KEY='...'   # soccer     — https://api-football.com
    ```
+
+   Both sports are [API-Sports](https://api-sports.io) products, but each is a
+   separate subscription with its own key and its own 100 requests/day free tier.
+   Set either one on its own if you only care about that sport — the other simply
+   reports its missing variable when you hit "Refresh Stats".
 
 4. **Run the migration and seed data:**
 
@@ -86,8 +91,9 @@ via Settings — category-based theming, offline resilience, sales reporting
 ## Feature notes & known simplifications
 
 - **Card research / Fact Sheet panel**: live season-stat lookups (season
-  averages for NBA via balldontlie, appearances/goals/assists/rating for
-  Football via API-Football) are wired up behind a "Refresh Stats" button —
+  averages for NBA via API-NBA, appearances/goals/assists/rating for
+  Football via API-Football — both API-Sports, a key per sport) are wired up
+  behind a "Refresh Stats" button —
   results are cached on the card (`Card.liveStats`/`liveStatsFetchedAt`) and
   only re-fetched at most once an hour, since the free API tiers have tight
   daily request limits (API-Football: 100/day). **Price comps remain
@@ -139,8 +145,9 @@ A design and usability pass on top of the working v1 app — no core feature cha
 - **Scope**: narrowed to sports cards only (NBA + Football/soccer) — Pokémon
   and Other TCG were removed as built-in categories; add them back anytime via
   Settings → Add a Custom Category if needed.
-- **Live stats**: NBA (balldontlie) and Football (API-Football) season-stat
-  lookups on the Fact Sheet, cached hourly given free-tier rate limits.
+- **Live stats**: NBA (API-NBA) and Football (API-Football) season-stat
+  lookups on the Fact Sheet — one API-Sports key per sport — cached hourly
+  given free-tier rate limits.
 - **Usability**: a unified filter chip bar (replacing separate status/sort/
   price dropdowns), empty states and loading skeletons throughout, a regrouped
   Add Card form (Identity → Pricing & Status → Photos & Notes) with real photo

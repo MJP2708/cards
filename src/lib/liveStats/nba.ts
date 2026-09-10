@@ -1,46 +1,91 @@
 import type { LiveStatsResult } from "./types";
+import { apiSportsFetch, hasApiSportsKey, missingKeyError } from "./apiSports";
 
-const BASE_URL = "https://api.balldontlie.io/v1";
+type NbaPlayer = {
+  id: number;
+  firstname?: string;
+  lastname?: string;
+  leagues?: { standard?: { pos?: string } };
+};
 
-async function balldontlieFetch(path: string) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { Authorization: process.env.BALLDONTLIE_API_KEY ?? "" },
-  });
-  if (!res.ok) throw new Error(`balldontlie request failed (${res.status})`);
-  return res.json();
+type NbaStatLine = {
+  min?: string | null;
+  points?: number | null;
+  totReb?: number | null;
+  assists?: number | null;
+  pos?: string | null;
+  team?: { name?: string } | null;
+};
+
+type AverageableStat = "points" | "totReb" | "assists";
+
+function nbaFetch(path: string) {
+  return apiSportsFetch("nba", path);
+}
+
+/** API-NBA reports minutes as "34:16" (and "", null, or "0:00" for a player who sat). */
+function playedMinutes(min: string | null | undefined): number {
+  if (!min) return 0;
+  const [minutes, seconds] = min.split(":");
+  return (Number(minutes) || 0) + (Number(seconds) || 0) / 60;
+}
+
+function average(lines: NbaStatLine[], field: AverageableStat): string {
+  if (lines.length === 0) return "—";
+  const total = lines.reduce((sum, line) => sum + (Number(line[field]) || 0), 0);
+  return (total / lines.length).toFixed(1);
 }
 
 export async function fetchNbaStats(params: { playerName: string; year: number | null }): Promise<LiveStatsResult> {
-  if (!process.env.BALLDONTLIE_API_KEY) {
-    return { ok: false, error: "BALLDONTLIE_API_KEY is not configured on the server." };
+  if (!hasApiSportsKey("nba")) {
+    return { ok: false, error: missingKeyError("nba") };
   }
 
-  const playerSearch = await balldontlieFetch(`/players?search=${encodeURIComponent(params.playerName)}`);
-  const player = playerSearch.data?.[0];
+  // API-NBA's search matches a single name field and wants 3+ characters, so a full
+  // "First Last" card name often misses — fall back to the surname on its own.
+  const candidates = [params.playerName, params.playerName.trim().split(/\s+/).pop() ?? ""].filter(
+    (term, index, all) => term.length >= 3 && all.indexOf(term) === index
+  );
+
+  let player: NbaPlayer | undefined;
+  for (const term of candidates) {
+    const search = await nbaFetch(`/players?search=${encodeURIComponent(term)}`);
+    player = (search.response as NbaPlayer[] | undefined)?.[0];
+    if (player) break;
+  }
   if (!player) {
     return { ok: false, error: `No player found matching "${params.playerName}".` };
   }
 
   const season = params.year ?? new Date().getFullYear() - 1;
-  const averages = await balldontlieFetch(`/season_averages?season=${season}&player_ids[]=${player.id}`);
-  const stat = averages.data?.[0];
-  if (!stat) {
-    return { ok: false, error: `No ${season} season averages found for ${params.playerName}.` };
+  const statistics = await nbaFetch(`/players/statistics?id=${player.id}&season=${season}`);
+
+  // Unlike a season-averages endpoint, this returns one row per game — including
+  // games the player was inactive for — so filter to real appearances and average.
+  const lines = (statistics.response as NbaStatLine[] | undefined) ?? [];
+  const played = lines.filter((line) => playedMinutes(line.min) > 0);
+  if (played.length === 0) {
+    return {
+      ok: false,
+      error: `No ${season} season stats found for ${params.playerName} (API-NBA's free tier only covers recent seasons).`,
+    };
   }
+
+  const latest = played[played.length - 1];
 
   return {
     ok: true,
     stats: {
-      provider: "balldontlie",
-      playerName: `${player.first_name} ${player.last_name}`,
-      team: player.team?.full_name ?? null,
-      position: player.position || null,
+      provider: "api-nba",
+      playerName: `${player.firstname ?? ""} ${player.lastname ?? ""}`.trim() || params.playerName,
+      team: latest.team?.name ?? null,
+      position: player.leagues?.standard?.pos || latest.pos || null,
       season: String(season),
       summary: [
-        { label: "Games Played", value: String(stat.games_played ?? "—") },
-        { label: "PPG", value: stat.pts !== undefined ? Number(stat.pts).toFixed(1) : "—" },
-        { label: "RPG", value: stat.reb !== undefined ? Number(stat.reb).toFixed(1) : "—" },
-        { label: "APG", value: stat.ast !== undefined ? Number(stat.ast).toFixed(1) : "—" },
+        { label: "Games Played", value: String(played.length) },
+        { label: "PPG", value: average(played, "points") },
+        { label: "RPG", value: average(played, "totReb") },
+        { label: "APG", value: average(played, "assists") },
       ],
       fetchedAt: new Date().toISOString(),
     },

@@ -1,13 +1,8 @@
 import type { LiveStatsResult } from "./types";
+import { apiSportsFetch, hasApiSportsKey, missingKeyError } from "./apiSports";
 
-const BASE_URL = "https://v3.football.api-sports.io";
-
-async function apiFootballFetch(path: string) {
-  const res = await fetch(`${BASE_URL}${path}`, {
-    headers: { "x-apisports-key": process.env.API_FOOTBALL_KEY ?? "" },
-  });
-  if (!res.ok) throw new Error(`API-Football request failed (${res.status})`);
-  return res.json();
+function apiFootballFetch(path: string) {
+  return apiSportsFetch("football", path);
 }
 
 export async function fetchFootballStats(params: {
@@ -15,8 +10,8 @@ export async function fetchFootballStats(params: {
   team: string | null;
   year: number | null;
 }): Promise<LiveStatsResult> {
-  if (!process.env.API_FOOTBALL_KEY) {
-    return { ok: false, error: "API_FOOTBALL_KEY is not configured on the server." };
+  if (!hasApiSportsKey("football")) {
+    return { ok: false, error: missingKeyError("football") };
   }
   if (!params.team) {
     return { ok: false, error: "Add a team on this card first — team is required to look up a player." };

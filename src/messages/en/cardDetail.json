@@ -4,7 +4,7 @@
   "cardDeleted": "“{name}” deleted",
   "factSheetTitle": "Fact Sheet — {category}",
   "liveStats": "Live Stats",
-  "liveStatsHelp": "Pulls season stats from balldontlie (NBA) or API-Football (soccer). Cached for an hour between refreshes since the free API tiers have tight daily limits.",
+  "liveStatsHelp": "Pulls season stats from API-Sports — API-NBA (NBA) or API-Football (soccer). Cached for an hour between refreshes since each free tier has a tight daily limit.",
   "noLiveStats": "No live stats fetched yet.",
   "seasonAndTeam": "{season} season · {team}",
   "updatedAgo": "updated {time}",

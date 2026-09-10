@@ -4,7 +4,7 @@
   "cardDeleted": "ลบ “{name}” แล้ว",
   "factSheetTitle": "ข้อมูลสรุป — {category}",
   "liveStats": "สถิติสด",
-  "liveStatsHelp": "ดึงสถิติฤดูกาลจาก balldontlie (NBA) หรือ API-Football (ฟุตบอล) เก็บแคชไว้ 1 ชั่วโมงระหว่างการรีเฟรช เนื่องจาก API แบบฟรีมีขีดจำกัดการเรียกใช้ต่อวัน",
+  "liveStatsHelp": "ดึงสถิติฤดูกาลจาก API-Sports — API-NBA (NBA) หรือ API-Football (ฟุตบอล) เก็บแคชไว้ 1 ชั่วโมงระหว่างการรีเฟรช เนื่องจากแพ็กเกจฟรีของแต่ละ API มีขีดจำกัดการเรียกใช้ต่อวัน",
   "noLiveStats": "ยังไม่มีการดึงสถิติสด",
   "seasonAndTeam": "ฤดูกาล {season} · {team}",
   "updatedAgo": "อัปเดต {time}",
