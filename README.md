@@ -51,6 +51,19 @@ via Settings — category-based theming, offline resilience, sales reporting
    Set either one on its own if you only care about that sport — the other simply
    reports its missing variable when you hit "Refresh Stats".
 
+   **These are the only API keys the app uses.** Every enrichment feature degrades
+   gracefully without them: worksheet import still works, cards still save with all
+   the data from your sheet, and the rows are simply flagged "Needs Review" with the
+   reason. Nothing errors out and no import is ever blocked by a missing key.
+
+   | Variable | Powers | Without it |
+   |---|---|---|
+   | `DATABASE_URL` | everything (pooled runtime connection) | app cannot start |
+   | `DIRECT_URL` | `prisma migrate` only | migrations fail; app runs fine |
+   | `BLOB_READ_WRITE_TOKEN` | card photo upload | upload button fails; URL fields still work |
+   | `API_NBA_KEY` | NBA live stats + import enrichment | NBA rows flagged Needs Review |
+   | `API_FOOTBALL_KEY` | Football live stats + import enrichment | Football rows flagged Needs Review |
+
 4. **Run the migration and seed data:**
 
    ```bash
@@ -87,6 +100,38 @@ via Settings — category-based theming, offline resilience, sales reporting
    a `postinstall` script (`prisma generate`) so the generated client is always
    regenerated from `prisma/schema.prisma` before the build — if you change the
    build command, make sure that still happens before `next build` runs.
+
+## Worksheet import
+
+`/import` accepts an `.xlsx` or `.csv` inventory sheet and never writes anything
+until you confirm. The flow is:
+
+1. **Parse.** Column headers are matched loosely — `Card Number`, `cardNumber` and
+   `card_number` all land on the same field, so the app's own CSV template and a
+   hand-made spreadsheet both work. In a workbook with several sheets, one named
+   `Inventory` wins, so a legend/notes sheet is never parsed as data. Unrecognised
+   columns are listed in the preview rather than silently dropped.
+2. **Stage.** Every row gets a status: **Ready**, **Needs Review** (imports fine,
+   but something wants your eye — an unrecognised status value, a missing required
+   attribute, or a likely duplicate) or **Failed** (unknown category, missing name —
+   never imported). Rows matching an existing card on name + series + card number
+   are flagged, and default to merging quantity rather than creating a duplicate.
+3. **Commit.** Only the rows you approve are written, each linked to an `ImportBatch`.
+4. **Enrich.** After the import returns, live stats are fetched per card in the
+   background. This runs in resumable chunks driven by the progress indicator rather
+   than one long request, so a large sheet can't be cut off by a serverless timeout.
+   Lookups are cached by category + name + series for 7 days, so re-importing similar
+   cards doesn't re-spend the 100/day free-tier quota. Any failure — missing key, quota
+   exhausted, provider down — flags that card for review and leaves the import intact.
+5. **Review.** The summary lists exactly which cards need attention and links to each.
+
+Past imports are recorded and readable at `GET /api/import`.
+
+**What is *not* auto-fetched: card images.** Sports card image matching via
+marketplace search titles is unreliable — seller-written titles are inconsistent and
+parallels are visually identical, so it would routinely attach a confident-looking
+wrong photo. Attach photos manually, or leave them empty for the category-themed
+placeholder.
 
 ## Feature notes & known simplifications
 

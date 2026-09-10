@@ -60,7 +60,26 @@ export async function PATCH(request: Request, { params }: Params) {
 export async function DELETE(_request: Request, { params }: Params) {
   const { id } = await params;
   try {
-    await prisma.card.delete({ where: { id } });
+    // Both relations default to RESTRICT, so a bare card.delete() 500s on any card
+    // that has history. Sales are financial records and must outlive the card, so a
+    // sold card is refused outright; price comps are disposable reference data and
+    // go with it. Wrapped in a transaction so a card is never left without its comps.
+    const saleCount = await prisma.sale.count({ where: { cardId: id } });
+    if (saleCount > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "This card has recorded sales and can't be deleted — that would erase sales history. Mark it Sold or set quantity to 0 instead.",
+          saleCount,
+        },
+        { status: 409 }
+      );
+    }
+
+    await prisma.$transaction([
+      prisma.priceComp.deleteMany({ where: { cardId: id } }),
+      prisma.card.delete({ where: { id } }),
+    ]);
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (isPrismaNotFoundError(error)) return notFoundResponse();

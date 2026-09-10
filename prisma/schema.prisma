@@ -41,11 +41,20 @@ model Card {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  // Worksheet-import provenance. enrichmentStatus tracks the background pass that
+  // runs after a batch commits: pending -> enriched | skipped | failed.
+  importBatchId    String?
+  importBatch      ImportBatch? @relation(fields: [importBatchId], references: [id])
+  enrichmentStatus String?
+  needsReview      Boolean      @default(false)
+  reviewReason     String?
+
   sales      Sale[]
   priceComps PriceComp[]
 
   @@index([category, status])
   @@index([name])
+  @@index([importBatchId])
 }
 
 model Category {
@@ -109,4 +118,35 @@ model Settings {
   minMarginPct          Float     @default(20)
   usdExchangeRate       Float?
   exchangeRateFetchedAt DateTime?
+}
+
+/// One worksheet upload. Drives the post-commit enrichment progress indicator
+/// and doubles as the import history log.
+model ImportBatch {
+  id            String   @id @default(cuid())
+  fileName      String
+  createdAt     DateTime @default(now())
+  rowCount      Int
+  importedCount Int      @default(0)
+  enrichedCount Int      @default(0)
+  reviewCount   Int      @default(0)
+  failedCount   Int      @default(0)
+  status        String   @default("importing") // importing | enriching | complete
+  finishedAt    DateTime?
+
+  cards Card[]
+
+  @@index([createdAt])
+}
+
+/// Enrichment lookups keyed by category+name+series so a re-import of similar cards
+/// doesn't re-spend the 100 req/day free-tier quota on the same players.
+model EnrichmentCache {
+  key       String   @id
+  provider  String
+  payload   Json?
+  hit       Boolean  @default(true) // false = looked up, genuinely no match; still worth caching
+  fetchedAt DateTime @default(now())
+
+  @@index([fetchedAt])
 }

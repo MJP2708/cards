@@ -18,6 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { href: "/dashboard", label: t("dashboard") },
     { href: "/reports", label: t("reports") },
     { href: "/checklist", label: t("checklist") },
+    { href: "/import", label: t("import") },
     { href: "/scan", label: t("scan") },
     { href: "/settings/categories", label: t("settings") },
   ];

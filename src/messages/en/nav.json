@@ -15,5 +15,6 @@
   "scanQr": "Scan QR",
   "inventory": "Inventory",
   "more": "More",
-  "mobileNavLabel": "Main navigation"
+  "mobileNavLabel": "Main navigation",
+  "import": "Import"
 }
