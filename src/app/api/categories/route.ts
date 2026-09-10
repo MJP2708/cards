@@ -4,6 +4,7 @@ import { getCategories } from "@/lib/categories";
 import { fieldSchemaSchema, themeTokensSchema } from "@/lib/fieldSchema";
 import { z } from "zod";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
+import { requireAdmin } from "@/lib/auth/guards";
 
 export async function GET() {
   const categories = await getCategories();
@@ -19,6 +20,8 @@ const createCategorySchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const gate = await requireAdmin();
+  if ("response" in gate) return gate.response;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
   const parsed = createCategorySchema.safeParse(json.data);

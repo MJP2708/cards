@@ -5,6 +5,7 @@ import { cardInputSchema } from "@/lib/validation/card";
 import { validateAttributes } from "@/lib/validation/attributes";
 import { getCategoryByKey } from "@/lib/categories";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
+import { requireUser } from "@/lib/auth/guards";
 
 const SORTABLE_FIELDS = new Set([
   "name",
@@ -19,6 +20,8 @@ const SORTABLE_FIELDS = new Set([
 ]);
 
 export async function GET(request: Request) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
   const status = searchParams.get("status");
@@ -58,6 +61,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
   const parsed = cardInputSchema.safeParse(json.data);

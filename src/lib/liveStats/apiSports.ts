@@ -33,8 +33,30 @@ export function missingKeyError() {
  * — those would otherwise read as "no player found". Unpack both shapes so the
  * Fact Sheet shows the real reason.
  */
+/**
+ * The free tier's binding limit is 10 requests PER MINUTE (the 100/day cap is the one
+ * that gets advertised). Every call goes through one shared pacer so a burst of
+ * enrichment can't trip it — measured from the last request, across all sports,
+ * since the quota is per account rather than per API.
+ */
+const MIN_REQUEST_INTERVAL_MS = 6_500;
+let lastRequestAt = 0;
+let pacerChain: Promise<void> = Promise.resolve();
+
+function pace(): Promise<void> {
+  // Chained rather than parallel so concurrent callers queue instead of all
+  // reading the same `lastRequestAt` and firing together.
+  pacerChain = pacerChain.then(async () => {
+    const wait = lastRequestAt + MIN_REQUEST_INTERVAL_MS - Date.now();
+    if (wait > 0) await new Promise((resolve) => setTimeout(resolve, wait));
+    lastRequestAt = Date.now();
+  });
+  return pacerChain;
+}
+
 export async function apiSportsFetch(sport: ApiSport, path: string) {
   const { host, label } = API_SPORTS[sport];
+  await pace();
   const res = await fetch(`https://${host}${path}`, {
     headers: { "x-apisports-key": apiSportsKey() ?? "" },
   });

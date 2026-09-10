@@ -2,12 +2,15 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { fetchLiveStats } from "@/lib/liveStats";
+import { requireUser } from "@/lib/auth/guards";
 
 const MIN_REFRESH_INTERVAL_MS = 60 * 60 * 1000; // 1 hour — free-tier rate limits are tight
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const { id } = await params;
   const { searchParams } = new URL(request.url);
   const force = searchParams.get("force") === "true";

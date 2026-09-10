@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isPrismaNotFoundError, notFoundResponse } from "@/lib/api";
+import { requireAdmin } from "@/lib/auth/guards";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -8,6 +9,8 @@ type Params = { params: Promise<{ id: string }> };
 // In Stock status, then deletes the Sale record. Only meaningful within the
 // toast's short grace window; not exposed as a general "unsell" feature.
 export async function DELETE(_request: Request, { params }: Params) {
+  const gate = await requireAdmin();
+  if ("response" in gate) return gate.response;
   const { id } = await params;
 
   try {

@@ -11,7 +11,7 @@ export async function fetchFootballStats(params: {
   year: number | null;
 }): Promise<LiveStatsResult> {
   if (!hasApiSportsKey()) {
-    return { ok: false, error: missingKeyError() };
+    return { ok: false, error: missingKeyError(), retryable: true };
   }
   if (!params.team) {
     return { ok: false, error: "Add a team on this card first — team is required to look up a player." };

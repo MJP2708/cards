@@ -6,6 +6,7 @@ import { validateAttributes } from "@/lib/validation/attributes";
 import { getCategoryByKey } from "@/lib/categories";
 import { z } from "zod";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
+import { requireAdmin } from "@/lib/auth/guards";
 
 const importSchema = z.object({
   category: z.string().min(1),
@@ -13,6 +14,8 @@ const importSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const gate = await requireAdmin();
+  if ("response" in gate) return gate.response;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
   const parsed = importSchema.safeParse(json.data);

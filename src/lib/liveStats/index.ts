@@ -25,7 +25,7 @@ export async function fetchLiveStats(card: {
       return await fetchFootballStats({ playerName: card.name, team, year: card.year });
     }
   } catch (error) {
-    return { ok: false, error: error instanceof Error ? error.message : "Live stats lookup failed." };
+    return { ok: false, error: error instanceof Error ? error.message : "Live stats lookup failed.", retryable: true };
   }
   return { ok: false, error: `Live stats aren't available for the "${card.category}" category.` };
 }

@@ -5,10 +5,13 @@ import { cardUpdateSchema } from "@/lib/validation/card";
 import { validateAttributes } from "@/lib/validation/attributes";
 import { getCategoryByKey } from "@/lib/categories";
 import { readJsonBody, invalidJsonResponse, isPrismaNotFoundError, notFoundResponse } from "@/lib/api";
+import { requireAdmin, requireUser } from "@/lib/auth/guards";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function GET(_request: Request, { params }: Params) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const { id } = await params;
   const card = await prisma.card.findUnique({
     where: { id },
@@ -19,6 +22,8 @@ export async function GET(_request: Request, { params }: Params) {
 }
 
 export async function PATCH(request: Request, { params }: Params) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const { id } = await params;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
@@ -58,6 +63,8 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
+  const gate = await requireAdmin();
+  if ("response" in gate) return gate.response;
   const { id } = await params;
   try {
     // Both relations default to RESTRICT, so a bare card.delete() 500s on any card

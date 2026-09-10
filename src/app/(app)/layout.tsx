@@ -9,8 +9,16 @@ import { OnboardingTour } from "@/components/onboarding/OnboardingTour";
 import { MoreMenu } from "@/components/MoreMenu";
 import { NavLinks } from "@/components/nav/NavLinks";
 import { MobileTabBar } from "@/components/nav/MobileTabBar";
+import { UserMenu } from "@/components/auth/UserMenu";
+import { getSessionUser } from "@/lib/auth/guards";
+import { redirect } from "next/navigation";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  // Authoritative check. The proxy only sniffs for a session cookie to bounce
+  // signed-out visitors early; this is what actually gates the app shell.
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+
   const t = await getTranslations("nav");
   const common = await getTranslations("common");
 
@@ -18,9 +26,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     { href: "/dashboard", label: t("dashboard") },
     { href: "/reports", label: t("reports") },
     { href: "/checklist", label: t("checklist") },
-    { href: "/import", label: t("import") },
+    ...(user.role === "ADMIN" ? [{ href: "/import", label: t("import") }] : []),
     { href: "/scan", label: t("scan") },
-    { href: "/settings/categories", label: t("settings") },
+    ...(user.role === "ADMIN"
+      ? [
+          { href: "/settings/categories", label: t("settings") },
+          { href: "/settings/users", label: t("users") },
+          { href: "/settings/diagnostics", label: t("diagnostics") },
+        ]
+      : []),
   ];
 
   return (
@@ -39,6 +53,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <OfflineBanner />
             <CommandPaletteButton />
             <span className="hidden md:contents">
+              <UserMenu name={user.name} role={user.role} />
               <MoreMenu />
             </span>
           </div>

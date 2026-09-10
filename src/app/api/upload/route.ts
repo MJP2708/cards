@@ -1,7 +1,10 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
+import { requireUser } from "@/lib/auth/guards";
 
 export async function POST(request: Request): Promise<NextResponse> {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const body = (await request.json()) as HandleUploadBody;
 
   try {

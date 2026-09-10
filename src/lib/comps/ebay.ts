@@ -30,8 +30,29 @@ export function missingCredentialsError() {
 // a cold serverless instance simply fetches a new one.
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
+/**
+ * Negative cache. While eBay is rejecting our credentials there is no point paying a
+ * round trip on every click — remember the failure briefly and fail fast instead.
+ * Cleared as soon as a token succeeds, so restored access is picked up immediately.
+ */
+let authFailure: { message: string; until: number } | null = null;
+const AUTH_FAILURE_TTL_MS = 5 * 60 * 1000;
+
+export function ebayAuthFailure(): string | null {
+  if (authFailure && Date.now() < authFailure.until) return authFailure.message;
+  return null;
+}
+
+/** Lets the diagnostics screen force a real check rather than reading the cache. */
+export function clearEbayAuthFailure() {
+  authFailure = null;
+}
+
 async function getAccessToken(): Promise<string> {
   if (cachedToken && Date.now() < cachedToken.expiresAt) return cachedToken.value;
+
+  const known = ebayAuthFailure();
+  if (known) throw new Error(known);
 
   const credentials = Buffer.from(`${process.env.EBAY_CLIENT_ID}:${process.env.EBAY_CLIENT_SECRET}`).toString("base64");
   const res = await fetch(`${hosts().auth}/identity/v1/oauth2/token`, {
@@ -48,9 +69,15 @@ async function getAccessToken(): Promise<string> {
 
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    throw new Error(`eBay auth failed (${res.status}). ${detail.slice(0, 200)}`);
+    const message =
+      res.status === 401
+        ? "eBay rejected the credentials (401). Production keysets stay disabled until eBay's Marketplace Account Deletion requirement is met or an exemption is granted."
+        : `eBay auth failed (${res.status}). ${detail.slice(0, 200)}`;
+    authFailure = { message, until: Date.now() + AUTH_FAILURE_TTL_MS };
+    throw new Error(message);
   }
 
+  authFailure = null;
   const body = (await res.json()) as { access_token: string; expires_in: number };
   cachedToken = {
     value: body.access_token,
@@ -67,14 +94,21 @@ export type EbayComp = {
   condition: string | null;
 };
 
-/** Builds the search text from the card's identifying fields, most specific first. */
+/**
+ * Builds the search text from the card's identifying fields. Series names usually
+ * already carry the year ("2023 Panini Prizm"), so prepending it again produced
+ * "2023 2023 Panini Prizm ..." — a duplicated token that narrows eBay's matching
+ * for no benefit. Only add the year when the series doesn't already state it.
+ */
 export function buildQuery(card: {
   name: string;
   series: string;
   year: number | null;
   cardNumber: string | null;
 }): string {
-  return [card.year, card.series, card.name, card.cardNumber].filter(Boolean).join(" ").trim();
+  const series = card.series?.trim() ?? "";
+  const year = card.year && !series.includes(String(card.year)) ? card.year : null;
+  return [year, series, card.name?.trim(), card.cardNumber?.trim()].filter(Boolean).join(" ").trim();
 }
 
 export async function searchEbayComps(query: string, limit = 10): Promise<EbayComp[]> {

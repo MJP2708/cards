@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bulkActionSchema } from "@/lib/validation/card";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
+import { requireAdmin } from "@/lib/auth/guards";
 
 export async function POST(request: Request) {
+  const gate = await requireAdmin();
+  if ("response" in gate) return gate.response;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
   const parsed = bulkActionSchema.safeParse(json.data);

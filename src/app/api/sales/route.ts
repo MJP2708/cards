@@ -4,10 +4,13 @@ import { markSoldSchema } from "@/lib/validation/card";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
+import { requireUser } from "@/lib/auth/guards";
 
 const saleCreateSchema = markSoldSchema.extend({ cardId: z.string() });
 
 export async function GET(request: Request) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const { searchParams } = new URL(request.url);
   const from = searchParams.get("from");
   const to = searchParams.get("to");
@@ -33,6 +36,8 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
   const parsed = saleCreateSchema.safeParse(json.data);
@@ -50,7 +55,9 @@ export async function POST(request: Request) {
   const remaining = card.quantity - quantitySold;
   const [sale] = await prisma.$transaction([
     prisma.sale.create({
-      data: { cardId, soldPrice, quantitySold, paymentMethod, buyerContact },
+      // userId is the audit trail: with several people on the till, this is how a
+      // questionable sale gets traced back to who rang it up.
+      data: { cardId, soldPrice, quantitySold, paymentMethod, buyerContact, userId: gate.user.id },
     }),
     prisma.card.update({
       where: { id: cardId },

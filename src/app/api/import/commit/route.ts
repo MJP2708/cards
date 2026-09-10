@@ -5,6 +5,7 @@ import { Prisma } from "@/generated/prisma/client";
 import { cardInputSchema } from "@/lib/validation/card";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
 import { enrichNextChunk } from "@/lib/import/enrich";
+import { requireAdmin } from "@/lib/auth/guards";
 
 const commitSchema = z.object({
   fileName: z.string().min(1),
@@ -23,6 +24,8 @@ const commitSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const gate = await requireAdmin();
+  if ("response" in gate) return gate.response;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
   const parsed = commitSchema.safeParse(json.data);

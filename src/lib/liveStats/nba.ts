@@ -38,7 +38,7 @@ function average(lines: NbaStatLine[], field: AverageableStat): string {
 
 export async function fetchNbaStats(params: { playerName: string; year: number | null }): Promise<LiveStatsResult> {
   if (!hasApiSportsKey()) {
-    return { ok: false, error: missingKeyError() };
+    return { ok: false, error: missingKeyError(), retryable: true };
   }
 
   // API-NBA's search matches a single name field and wants 3+ characters, so a full
@@ -47,10 +47,17 @@ export async function fetchNbaStats(params: { playerName: string; year: number |
     (term, index, all) => term.length >= 3 && all.indexOf(term) === index
   );
 
+  const wanted = params.playerName.trim().toLowerCase();
   let player: NbaPlayer | undefined;
   for (const term of candidates) {
     const search = await nbaFetch(`/players?search=${encodeURIComponent(term)}`);
-    player = (search.response as NbaPlayer[] | undefined)?.[0];
+    const results = (search.response as NbaPlayer[] | undefined) ?? [];
+    if (results.length === 0) continue;
+    // Taking results[0] blindly matched "Seth Curry" for a Stephen Curry card —
+    // confidently wrong data is worse than none, so prefer an exact full-name hit.
+    player =
+      results.find((r) => `${r.firstname ?? ""} ${r.lastname ?? ""}`.trim().toLowerCase() === wanted) ??
+      results[0];
     if (player) break;
   }
   if (!player) {

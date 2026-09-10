@@ -2,10 +2,13 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { priceCompInputSchema } from "@/lib/validation/priceComp";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
+import { requireUser } from "@/lib/auth/guards";
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const { id } = await params;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();

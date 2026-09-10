@@ -72,6 +72,10 @@ model Sale {
   id            String   @id @default(cuid())
   cardId        String
   card          Card     @relation(fields: [cardId], references: [id])
+  // Audit trail: who rang this sale up. Nullable so sales recorded before the
+  // user system existed (and any future automated entry) remain valid.
+  userId        String?
+  user          User?    @relation(fields: [userId], references: [id])
   soldPrice     Float
   quantitySold  Int      @default(1)
   paymentMethod String
@@ -149,4 +153,19 @@ model EnrichmentCache {
   fetchedAt DateTime @default(now())
 
   @@index([fetchedAt])
+}
+
+/// Booth staff accounts. There is no public signup — an ADMIN creates every account.
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         String   @default("STAFF") // "ADMIN" | "STAFF"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  sales Sale[]
+
+  @@index([role])
 }

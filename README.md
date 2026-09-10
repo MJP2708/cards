@@ -81,20 +81,61 @@ via Settings — category-based theming, offline resilience, sales reporting
 
    Open [http://localhost:3000](http://localhost:3000) — it redirects to `/all`.
 
+### Migrations and the IPv6 problem
+
+Migrations run **automatically on every Vercel deploy** — `build` is
+`prisma migrate deploy && next build`, so a deploy that can't migrate fails loudly
+rather than shipping against a stale schema. `DIRECT_URL` must therefore be present in
+the Vercel **build** environment, not just at runtime: `migrate deploy` needs the
+non-pooled connection, because Neon's pooled endpoint doesn't support the advisory
+locks Prisma Migrate takes. Use `npm run build:no-migrate` for a build that skips it.
+
+**Running migrations locally from a network without IPv6 egress.** Neon publishes both
+A and AAAA records. Prisma's migration engine is a Rust binary that will pick the IPv6
+address and does *not* fall back to IPv4, so on a network without IPv6 (a phone
+hotspot, most commonly) every `prisma migrate` command dies with `P1001` while the app
+itself keeps working — the app's queries go through Node's `pg`, which does fall back.
+
+`NODE_OPTIONS=--dns-result-order=ipv4first` **does not fix this** — it only affects
+Node's resolver, not the migration engine's. It was measured, not assumed. What works
+is pinning the hostname to its IPv4 address so the name (and therefore SNI and TLS
+validation) stays intact:
+
+```bash
+# find the IPv4 address of your direct endpoint
+getent ahostsv4 ep-xxxx.<region>.aws.neon.tech | head -1
+
+# then, as root, add it to /etc/hosts
+echo "13.251.17.193  ep-xxxx.<region>.aws.neon.tech" | sudo tee -a /etc/hosts
+```
+
+Remove the line when you move back to a network with working IPv6. This is a
+**local-development fallback only** — production migrations go through the Vercel
+build step above and never depend on your laptop's network.
+
+## Integration status
+
+`/settings/diagnostics` (admin only) live-checks every external service and shows
+Working / Unavailable / Not configured for each, with the env vars each one needs.
+Use it before an event rather than discovering a dead integration at the booth.
+"Not configured" means a key is absent and that feature is simply off; "Unavailable"
+means a key is set but the service rejected the call, in which case the app falls back
+to manual entry rather than erroring.
+
+A failing integration never blocks anything: worksheet import commits regardless,
+cards keep every value from your sheet, and rows are flagged for review. eBay failures
+are additionally remembered for five minutes so a known-down service isn't retried on
+every click; the diagnostics page's "Re-check now" button bypasses that cache.
+
 ## Deploying to Vercel
 
 1. `vercel link` (or import the repo from the Vercel dashboard) to create/link the Vercel project.
 2. In the Vercel project's environment variables, add `DATABASE_URL` (pooled) and
-   `DIRECT_URL` (direct) with the same values as your local `.env`.
-3. Deploy. On first deploy (and after any schema change), run migrations against
-   Neon from your machine or CI:
-
-   ```bash
-   npx prisma migrate deploy
-   ```
-
-   (`migrate deploy` applies committed migrations without prompting — it's the
-   one to use in CI/production; `migrate dev` is for local schema iteration.)
+   `DIRECT_URL` (direct) with the same values as your local `.env`, plus `AUTH_SECRET`
+   (generate a fresh one for production — reusing the local value is not safe, and
+   changing it later signs everyone out). `DIRECT_URL` must be exposed to the **build**
+   environment, since `prisma migrate deploy` runs there.
+3. Deploy. Migrations apply automatically as part of the build — no local step.
 4. Vercel's build step runs `npm install` then `next build`. `package.json` has
    a `postinstall` script (`prisma generate`) so the generated client is always
    regenerated from `prisma/schema.prisma` before the build — if you change the

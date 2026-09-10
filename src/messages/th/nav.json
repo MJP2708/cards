@@ -16,5 +16,7 @@
   "inventory": "คลังการ์ด",
   "more": "เพิ่มเติม",
   "mobileNavLabel": "เมนูหลัก",
-  "import": "นำเข้าไฟล์"
+  "import": "นำเข้าไฟล์",
+  "users": "ผู้ใช้งาน",
+  "diagnostics": "สถานะระบบ"
 }

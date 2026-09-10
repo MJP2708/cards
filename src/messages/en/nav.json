@@ -16,5 +16,7 @@
   "inventory": "Inventory",
   "more": "More",
   "mobileNavLabel": "Main navigation",
-  "import": "Import"
+  "import": "Import",
+  "users": "Users",
+  "diagnostics": "Status"
 }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fromUsd } from "@/lib/currency";
+import { requireUser } from "@/lib/auth/guards";
 import {
   EBAY_COMP_SOURCE,
   buildQuery,
@@ -14,6 +15,8 @@ const MIN_REFRESH_INTERVAL_MS = 60 * 60 * 1000; // same 1-hour guard as refresh-
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const { id } = await params;
   const { searchParams } = new URL(request.url);
   const force = searchParams.get("force") === "true";
