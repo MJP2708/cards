@@ -7,7 +7,12 @@ import Papa from "papaparse";
  * Normalising both to bare alphanumerics lets one mapping serve both.
  */
 function normalizeHeader(header: string): string {
-  return header.toLowerCase().replace(/[^a-z0-9]/g, "");
+  return header
+    .toLowerCase()
+    // Drop a trailing unit/currency note first — "Cost Basis (THB)" is still costBasis,
+    // and without this it normalises to "costbasisthb" and silently goes unmapped.
+    .replace(/\([^)]*\)/g, "")
+    .replace(/[^a-z0-9]/g, "");
 }
 
 /** Worksheet column -> Card field. Several spellings map to the same field. */
