@@ -398,7 +398,7 @@ export function CardForm({
           <Button
             type="button"
             variant="secondary"
-            booth
+           
             icon={ArrowRight}
             loading={submitting === "similar"}
             disabled={submitting !== null}
@@ -411,7 +411,7 @@ export function CardForm({
         <Button
           type="submit"
           variant="primary"
-          booth
+         
           loading={submitting === "save"}
           disabled={submitting !== null}
           className="flex-1 md:flex-none"

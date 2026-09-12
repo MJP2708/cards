@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import { useCategories } from "@/hooks/useCategories";
 import { useSettings, useUpdateSettings } from "@/lib/data/settings";
 import { useUiStore } from "@/store/uiStore";
@@ -38,12 +39,16 @@ export default function SettingsPage() {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
 
+  const router = useRouter();
+  const [storeName, setStoreName] = useState("");
+  const [storeNameSaved, setStoreNameSaved] = useState(false);
   const [minMarginPct, setMinMarginPct] = useState("20");
   const [usdExchangeRate, setUsdExchangeRate] = useState("");
   const [settingsSaved, setSettingsSaved] = useState(false);
 
   useEffect(() => {
     if (settings) {
+      setStoreName(settings.storeName);
       setMinMarginPct(String(settings.minMarginPct));
       setUsdExchangeRate(settings.usdExchangeRate ? String(settings.usdExchangeRate) : "");
     }
@@ -107,6 +112,39 @@ export default function SettingsPage() {
       <h1 className="font-display text-xl font-semibold">{t("title")}</h1>
 
       <section className="space-y-3 rounded-lg border border-border-1 p-4">
+        <h2 className="text-sm font-semibold text-foreground/70">Store</h2>
+        <label className="flex flex-col gap-1 text-sm">
+          Store name
+          <input
+            type="text"
+            value={storeName}
+            onChange={(e) => {
+              setStoreName(e.target.value);
+              setStoreNameSaved(false);
+            }}
+            className="w-full max-w-sm rounded-md border border-border-1 px-2 py-1.5"
+          />
+          <span className="text-xs text-foreground/50">
+            Shown in the header, the browser tab and on sales report PDFs.
+          </span>
+        </label>
+        <button
+          disabled={!storeName.trim()}
+          onClick={async () => {
+            await updateSettings.mutateAsync({ storeName: storeName.trim() });
+            // The header and tab title are server-rendered, so re-render the
+            // tree rather than waiting for the next navigation.
+            router.refresh();
+            setStoreNameSaved(true);
+          }}
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark disabled:opacity-50"
+        >
+          {common("save")}
+        </button>
+        {storeNameSaved && <p className="text-sm text-emerald-600">{t("saved")}</p>}
+      </section>
+
+      <section className="space-y-3 rounded-lg border border-border-1 p-4">
         <h2 className="text-sm font-semibold text-foreground/70">{t("currencyAndNegotiation")}</h2>
         <div className="flex flex-wrap gap-4 text-sm">
           <label className="flex flex-col gap-1">
@@ -138,7 +176,7 @@ export default function SettingsPage() {
             });
             setSettingsSaved(true);
           }}
-          className="booth-target rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
+          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
         >
           {common("save")}
         </button>
@@ -149,7 +187,7 @@ export default function SettingsPage() {
         <h2 className="text-sm font-semibold text-foreground/70">{t("help")}</h2>
         <button
           onClick={openTour}
-          className="booth-target rounded-md border border-border-1 px-4 py-2 text-sm hover:bg-surface-1"
+          className="rounded-md border border-border-1 px-4 py-2 text-sm hover:bg-surface-1"
         >
           {t("replayTour")}
         </button>
@@ -168,7 +206,7 @@ export default function SettingsPage() {
         <p className="text-sm text-foreground/60">{t("backupDescription")}</p>
         <a
           href="/api/backup"
-          className="booth-target inline-block rounded-md border border-border-1 px-4 py-2 text-sm hover:bg-surface-1"
+          className="inline-block rounded-md border border-border-1 px-4 py-2 text-sm hover:bg-surface-1"
         >
           {t("downloadBackup")}
         </a>
@@ -316,7 +354,7 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <button type="submit" className="booth-target rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark">
+          <button type="submit" className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark">
             {t("createCategory")}
           </button>
         </form>

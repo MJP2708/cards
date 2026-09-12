@@ -70,7 +70,7 @@ export default function ScanPage() {
           placeholder={t("manualPlaceholder")}
           className="flex-1 rounded-md border border-border-1 px-3 py-2 text-sm"
         />
-        <button type="submit" className="booth-target rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark">
+        <button type="submit" className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark">
           {t("go")}
         </button>
       </form>

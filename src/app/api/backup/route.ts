@@ -1,6 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { requireAdmin } from "@/lib/auth/guards";
 
 export async function GET() {
+  // A full database dump — cards, sales and buyer contacts. Admin only.
+  const gate = await requireAdmin();
+  if ("response" in gate) return gate.response;
+
   const [cards, categories, sales, bundles, priceComps, filterPresets, settings] = await Promise.all([
     prisma.card.findMany(),
     prisma.category.findMany(),

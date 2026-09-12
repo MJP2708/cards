@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import { X, FileBarChart, ListChecks, Settings } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { BoothModeToggle } from "@/components/BoothModeToggle";
 import { DarkModeToggle } from "@/components/DarkModeToggle";
 import { Modal } from "@/components/ui/Modal";
 
@@ -58,7 +57,6 @@ export function MoreSheet({ open, onClose }: { open: boolean; onClose: () => voi
 
       <div className="flex flex-wrap gap-2 border-t border-border-1 pt-3">
         <LanguageSwitcher />
-        <BoothModeToggle />
         <DarkModeToggle />
       </div>
     </Modal>

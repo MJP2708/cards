@@ -133,7 +133,7 @@ function InventoryRow({
       </td>
       <td className="px-3 py-2 text-right">
         {card.status !== "Sold" && (
-          <Button size="sm" booth onClick={() => onMarkSold(card)}>
+          <Button size="sm" onClick={() => onMarkSold(card)}>
             {common("markSold")}
           </Button>
         )}
@@ -235,7 +235,7 @@ export default function CategoryInventoryPage() {
             {!isAll && (
               <button
                 onClick={() => setShowImport(true)}
-                className="booth-target hidden items-center gap-1.5 rounded-md border border-border-1 px-3 py-2 text-sm hover:bg-surface-1 sm:flex"
+                className="hidden items-center gap-1.5 rounded-md border border-border-1 px-3 py-2 text-sm hover:bg-surface-1 sm:flex"
               >
                 <Upload className="h-4 w-4" aria-hidden />
                 {t("bulkImport")}
@@ -243,7 +243,7 @@ export default function CategoryInventoryPage() {
             )}
             <Link
               href={`/${params.category}/new`}
-              className="booth-target hidden items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark sm:flex"
+              className="hidden items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark sm:flex"
             >
               <PackagePlus className="h-4 w-4" aria-hidden />
               {common("addCard")}

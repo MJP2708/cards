@@ -3,8 +3,11 @@ import { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
+import { requireUser } from "@/lib/auth/guards";
 
 export async function GET(request: Request) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
   const presets = await prisma.filterPreset.findMany({
@@ -21,6 +24,8 @@ const createSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
   const parsed = createSchema.safeParse(json.data);

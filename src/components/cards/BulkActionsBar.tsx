@@ -28,12 +28,12 @@ export function BulkActionsBar({
     <div className="motif-surface sticky top-0 z-10 flex flex-wrap items-center gap-2 rounded-md border border-accent bg-surface-1 px-3 py-2 text-sm">
       <span className="font-medium">{t("selected", { count: selectedIds.length })}</span>
 
-      <Button size="sm" booth onClick={onSellBundle}>
+      <Button size="sm" onClick={onSellBundle}>
         {selectedIds.length > 1 ? t("sellBundle") : t("sell")}
       </Button>
 
       {!adjusting ? (
-        <Button size="sm" booth variant="secondary" onClick={() => setAdjusting(true)}>
+        <Button size="sm" variant="secondary" onClick={() => setAdjusting(true)}>
           {t("adjustPrice")}
         </Button>
       ) : (
@@ -60,16 +60,16 @@ export function BulkActionsBar({
         </div>
       )}
 
-      <Button size="sm" booth variant="secondary" onClick={() => bulkAction.mutate({ ids: selectedIds, action: "markPacked" })}>
+      <Button size="sm" variant="secondary" onClick={() => bulkAction.mutate({ ids: selectedIds, action: "markPacked" })}>
         {t("markPacked")}
       </Button>
-      <Button size="sm" booth variant="secondary" onClick={() => bulkAction.mutate({ ids: selectedIds, action: "markUnpacked" })}>
+      <Button size="sm" variant="secondary" onClick={() => bulkAction.mutate({ ids: selectedIds, action: "markUnpacked" })}>
         {t("markUnpacked")}
       </Button>
 
       <Button
         size="sm"
-        booth
+       
         variant="destructive"
         className="border border-[var(--danger-200)] dark:border-[color-mix(in_srgb,var(--danger-600)_45%,transparent)]"
         onClick={() => {

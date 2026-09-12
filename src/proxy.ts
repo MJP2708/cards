@@ -9,7 +9,9 @@ import type { NextRequest } from "next/server";
  */
 const SESSION_COOKIES = ["authjs.session-token", "__Secure-authjs.session-token"];
 
-const PUBLIC_PATHS = ["/login"];
+// /signup is public because it has to be reachable with no session at all. It
+// gates itself: the page redirects to /login once the store has an owner.
+const PUBLIC_PATHS = ["/login", "/signup"];
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

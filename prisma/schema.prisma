@@ -119,6 +119,12 @@ model FilterPreset {
 
 model Settings {
   id                    String    @id @default("singleton")
+  // The store's own name, shown wherever the app used to say "Booth Cards".
+  // It lives here rather than on User because this install is single-tenant:
+  // one inventory shared by every account, so Admin and Staff must always see
+  // the same name. The default keeps pre-existing installs rendering exactly
+  // as before until an owner sets a real one at sign-up.
+  storeName             String    @default("Booth Cards")
   minMarginPct          Float     @default(20)
   usdExchangeRate       Float?
   exchangeRateFetchedAt DateTime?

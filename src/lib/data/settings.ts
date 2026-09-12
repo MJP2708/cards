@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export type SettingsDTO = {
   id: string;
+  storeName: string;
   minMarginPct: number;
   usdExchangeRate: number | null;
   exchangeRateFetchedAt: string | null;
@@ -22,7 +23,7 @@ export function useSettings() {
 export function useUpdateSettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { minMarginPct?: number; usdExchangeRate?: number }) =>
+    mutationFn: (input: { storeName?: string; minMarginPct?: number; usdExchangeRate?: number }) =>
       fetchJson<SettingsDTO>("/api/settings", { method: "PATCH", body: JSON.stringify(input) }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["settings"] }),
   });

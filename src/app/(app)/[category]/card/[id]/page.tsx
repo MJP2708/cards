@@ -66,7 +66,7 @@ export default function CardDetailPage() {
             apart rather than sitting at equal weight beside it. */}
         <div className="flex items-center gap-2">
           {card.status !== "Sold" && (
-            <Button booth onClick={() => setShowSoldDialog(true)}>
+            <Button onClick={() => setShowSoldDialog(true)}>
               {common("markSold")}
             </Button>
           )}
@@ -74,13 +74,13 @@ export default function CardDetailPage() {
             href={`/label/${card.id}`}
             target="_blank"
             aria-label={t("printQrLabel")}
-            className="booth-target flex items-center gap-1.5 rounded-md border border-border-1 px-3 py-2 text-sm hover:bg-surface-1"
+            className="flex items-center gap-1.5 rounded-md border border-border-1 px-3 py-2 text-sm hover:bg-surface-1"
           >
             <Printer className="h-4 w-4" aria-hidden />
             <span className="hidden sm:inline">{t("printQrLabel")}</span>
           </Link>
           <Button
-            booth
+           
             variant="destructive"
             aria-label={common("delete")}
             onClick={() => {

@@ -23,7 +23,7 @@ export function SearchBar() {
         onChange={(e) => setValue(e.target.value)}
         placeholder={t("search")}
         aria-label={t("search")}
-        className="booth-target w-full rounded-md border border-border-1 bg-surface-1 px-3 py-1.5 text-sm outline-none focus:border-accent"
+        className="w-full rounded-md border border-border-1 bg-surface-1 px-3 py-1.5 text-sm outline-none focus:border-accent"
       />
     </form>
   );

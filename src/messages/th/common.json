@@ -1,5 +1,4 @@
 {
-  "appName": "Booth Cards",
   "addCard": "เพิ่มการ์ด",
   "markSold": "ทำเครื่องหมายขายแล้ว",
   "save": "บันทึก",
@@ -17,7 +16,6 @@
   "sold": "ขายแล้ว",
   "darkMode": "โหมดมืด",
   "lightMode": "โหมดสว่าง",
-  "boothMode": "โหมดบูธ",
   "liveStatus": "ออนไลน์",
   "offlineStatus": "ออฟไลน์ — แสดงข้อมูลที่แคชไว้",
   "offlineStatusWithQueue": "ออฟไลน์ — แสดงข้อมูลที่แคชไว้ ({count} รายการรอซิงค์)",

@@ -99,7 +99,7 @@ export function CardGrid({
                   <StatusPill status={card.status} className="hidden sm:inline-flex" />
                 </div>
                 {!isSold ? (
-                  <Button size="sm" booth className="mt-1 w-full" onClick={() => onMarkSold(card)}>
+                  <Button size="sm" className="mt-1 w-full" onClick={() => onMarkSold(card)}>
                     {common("markSold")}
                   </Button>
                 ) : (

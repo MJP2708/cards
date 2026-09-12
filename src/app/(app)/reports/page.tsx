@@ -49,19 +49,19 @@ export default function ReportsPage() {
             setFrom(todayISO());
             setTo(todayISO());
           }}
-          className="booth-target rounded-md border border-border-1 px-3 py-2 hover:bg-surface-1"
+          className="rounded-md border border-border-1 px-3 py-2 hover:bg-surface-1"
         >
           {t("endOfDay")}
         </button>
         <a
           href={reportDownloadUrl("pdf", filters, "Sales Report")}
-          className="booth-target rounded-md bg-accent px-4 py-2 font-medium text-white hover:bg-accent-dark"
+          className="rounded-md bg-accent px-4 py-2 font-medium text-white hover:bg-accent-dark"
         >
           {t("downloadPdf")}
         </a>
         <a
           href={reportDownloadUrl("csv", filters)}
-          className="booth-target rounded-md border border-border-1 px-4 py-2 hover:bg-surface-1"
+          className="rounded-md border border-border-1 px-4 py-2 hover:bg-surface-1"
         >
           {t("exportCsv")}
         </a>

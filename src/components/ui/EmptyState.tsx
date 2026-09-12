@@ -26,7 +26,7 @@ export function EmptyState({
       {actionLabel && actionHref && (
         <Link
           href={actionHref}
-          className="booth-target mt-1 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
+          className="mt-1 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
         >
           {actionLabel}
         </Link>
@@ -34,7 +34,7 @@ export function EmptyState({
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className="booth-target mt-1 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
+          className="mt-1 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark"
         >
           {actionLabel}
         </button>

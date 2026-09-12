@@ -24,7 +24,11 @@ export async function GET() {
   return NextResponse.json(users);
 }
 
-/** Admin-only account creation. There is no public signup route by design. */
+/**
+ * Admin-only account creation. The one public sign-up route (/api/auth/signup)
+ * only works while the store has no owner at all — after that every account,
+ * Staff or Admin, is created here.
+ */
 export async function POST(request: Request) {
   const gate = await requireAdmin();
   if ("response" in gate) return gate.response;

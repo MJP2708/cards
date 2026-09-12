@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { getStoreName } from "@/lib/storeName";
 import { Geist, Geist_Mono, Oswald, Barlow_Condensed, Baloo_2, Cinzel, Kanit, Chakra_Petch, Noto_Sans_Thai } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -44,11 +45,17 @@ const notoSansThai = Noto_Sans_Thai({
   weight: ["400", "500", "600", "700"],
 });
 
-export const metadata: Metadata = {
-  title: "Booth Cards — Convention Inventory & Sales",
-  description: "Multi-category trading card inventory, research, and sales tracker",
-  manifest: "/manifest.json",
-};
+// generateMetadata rather than a static `metadata` object so the tab title
+// follows the store's name, and picks up a rename on the next render. A segment
+// may export one or the other, never both.
+export async function generateMetadata(): Promise<Metadata> {
+  const storeName = await getStoreName();
+  return {
+    title: `${storeName} — Convention Inventory & Sales`,
+    description: "Multi-category trading card inventory, research, and sales tracker",
+    manifest: "/manifest.json",
+  };
+}
 
 export const viewport: Viewport = {
   themeColor: "#64748b",

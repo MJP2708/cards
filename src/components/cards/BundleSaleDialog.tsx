@@ -89,7 +89,7 @@ export function BundleSaleDialog({ cards, onClose }: { cards: CardDTO[]; onClose
           <Button type="button" variant="ghost" onClick={onClose}>
             {common("cancel")}
           </Button>
-          <Button type="submit" variant="primary" booth loading={bundleSale.isPending}>
+          <Button type="submit" variant="primary" loading={bundleSale.isPending}>
             {bundleSale.isPending ? t("recording") : t("confirmBundleSale")}
           </Button>
         </div>

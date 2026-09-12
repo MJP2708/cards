@@ -2,8 +2,13 @@ import { renderToBuffer } from "@react-pdf/renderer";
 import { buildSalesReport } from "@/lib/reports/salesReport";
 import { SalesReportPdf } from "@/lib/reports/SalesReportPdf";
 import { getCategoryByKey } from "@/lib/categories";
+import { getStoreName } from "@/lib/storeName";
+import { requireUser } from "@/lib/auth/guards";
 
 export async function GET(request: Request) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
+
   const { searchParams } = new URL(request.url);
   const from = searchParams.get("from");
   const to = searchParams.get("to");
@@ -19,7 +24,10 @@ export async function GET(request: Request) {
   const categoryRow = category && category !== "all" ? await getCategoryByKey(category) : null;
   const accentColor = categoryRow?.themeTokens.accent;
 
-  const buffer = await renderToBuffer(<SalesReportPdf report={report} title={title} accentColor={accentColor} />);
+  const storeName = await getStoreName();
+  const buffer = await renderToBuffer(
+    <SalesReportPdf report={report} title={title} storeName={storeName} accentColor={accentColor} />
+  );
 
   return new Response(new Uint8Array(buffer), {
     headers: {

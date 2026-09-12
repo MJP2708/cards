@@ -170,7 +170,7 @@ export function MarkSoldDialog({ card, onClose }: { card: CardDTO; onClose: () =
                 <Button type="button" variant="ghost" onClick={onClose}>
                   {common("cancel")}
                 </Button>
-                <Button type="submit" variant="primary" booth loading={markSold.isPending}>
+                <Button type="submit" variant="primary" loading={markSold.isPending}>
                   {markSold.isPending
                     ? t("recording")
                     : isDefaultCase

@@ -34,7 +34,7 @@ export function CategorySwitcher() {
           <Link
             key={tab.key}
             href={href}
-            className={`booth-target relative flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ${
+            className={`relative flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium ${
               !isActive ? "hover:bg-surface-1" : ""
             }`}
           >

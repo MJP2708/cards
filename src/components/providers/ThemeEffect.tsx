@@ -47,7 +47,6 @@ export function ThemeEffect() {
   const { data: categories } = useCategories();
   const locale = useLocale() as "en" | "th";
   const isDark = useUiStore((s) => s.isDark);
-  const boothMode = useUiStore((s) => s.boothMode);
   const reducedMotion = useUiStore((s) => s.reducedMotion);
 
   useEffect(() => {
@@ -72,10 +71,6 @@ export function ThemeEffect() {
   useEffect(() => {
     document.documentElement.classList.toggle("dark", isDark);
   }, [isDark]);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("booth-mode", boothMode);
-  }, [boothMode]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("force-reduced-motion", reducedMotion);

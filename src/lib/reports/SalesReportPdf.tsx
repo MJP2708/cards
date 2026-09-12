@@ -66,10 +66,13 @@ function money(n: number) {
 export function SalesReportPdf({
   report,
   title,
+  storeName,
   accentColor = NEUTRAL,
 }: {
   report: SalesReport;
   title: string;
+  /** The shop's own name, printed as the wordmark on every page. */
+  storeName: string;
   accentColor?: string;
 }) {
   const s = styles(accentColor);
@@ -77,7 +80,7 @@ export function SalesReportPdf({
     <Document>
       <Page size="A4" style={s.page}>
         <View style={s.headerBand}>
-          <Text style={s.wordmark}>BOOTH CARDS</Text>
+          <Text style={s.wordmark}>{storeName.toUpperCase()}</Text>
           <Text style={s.title}>{title}</Text>
           <Text style={s.subtitle}>
             {report.from ? report.from.toLocaleDateString() : "All time"}

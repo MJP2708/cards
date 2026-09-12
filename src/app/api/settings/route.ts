@@ -16,6 +16,9 @@ export async function GET() {
 }
 
 const updateSchema = z.object({
+  // Renaming the store here is what makes the header, tab title and report
+  // wordmark follow along — they all read this row at render time.
+  storeName: z.string().trim().min(1).optional(),
   minMarginPct: z.number().min(0).optional(),
   usdExchangeRate: z.number().min(0).optional(),
 });

@@ -11,6 +11,7 @@ import { NavLinks } from "@/components/nav/NavLinks";
 import { MobileTabBar } from "@/components/nav/MobileTabBar";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { getSessionUser } from "@/lib/auth/guards";
+import { getStoreName } from "@/lib/storeName";
 import { redirect } from "next/navigation";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -20,7 +21,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!user) redirect("/login");
 
   const t = await getTranslations("nav");
-  const common = await getTranslations("common");
+  // The shop's own name, not a translated product name — one value for every
+  // account on this install, so Admin and Staff always see the same header.
+  const storeName = await getStoreName();
 
   const navLinks = [
     { href: "/dashboard", label: t("dashboard") },
@@ -39,14 +42,14 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Row 1 shrinks on mobile — MoreMenu (language/booth/dark) stays here
+      {/* Row 1 shrinks on mobile — MoreMenu (language/dark) stays here
           for desktop, since the mobile "More" sheet lives in the bottom tab
           bar instead. Row 2's link list is desktop-only for the same reason:
           those five destinations already have thumb-zone equivalents below. */}
       <header className="border-b border-border-1 bg-background">
         <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 md:py-3">
           <Link href="/all" className="shrink-0 text-base font-semibold md:text-lg">
-            {common("appName")}
+            {storeName}
           </Link>
           <SearchBar />
           <div className="ml-auto flex items-center gap-2">

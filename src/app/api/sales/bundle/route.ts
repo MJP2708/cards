@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { bundleSaleSchema } from "@/lib/validation/card";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
+import { requireUser } from "@/lib/auth/guards";
 
 export async function POST(request: Request) {
+  const gate = await requireUser();
+  if ("response" in gate) return gate.response;
+
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
   const parsed = bundleSaleSchema.safeParse(json.data);
@@ -34,6 +38,9 @@ export async function POST(request: Request) {
           paymentMethod,
           buyerContact,
           bundleId: bundle.id,
+          // Same audit trail as a single sale: bundle rows were previously
+          // written with no userId, so they showed no seller in reports.
+          userId: gate.user.id,
         },
       });
     })

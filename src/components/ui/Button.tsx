@@ -32,11 +32,9 @@ export const Button = forwardRef<
     size?: Size;
     loading?: boolean;
     icon?: React.ComponentType<{ className?: string }>;
-    /** Opts into the existing booth-mode enlarged minimum (`.booth-target`). */
-    booth?: boolean;
   }
 >(function Button(
-  { variant = "primary", size = "md", loading = false, icon: Icon, booth = false, className = "", children, disabled, ...props },
+  { variant = "primary", size = "md", loading = false, icon: Icon, className = "", children, disabled, ...props },
   ref
 ) {
   return (
@@ -44,7 +42,7 @@ export const Button = forwardRef<
       ref={ref}
       disabled={disabled || loading}
       aria-busy={loading || undefined}
-      className={`inline-flex shrink-0 items-center justify-center rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 ${VARIANT_CLASS[variant]} ${SIZE_CLASS[size]} ${booth ? "booth-target" : ""} ${className}`}
+      className={`inline-flex shrink-0 items-center justify-center rounded-md font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 ${VARIANT_CLASS[variant]} ${SIZE_CLASS[size]} ${className}`}
       {...props}
     >
       {loading ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden /> : Icon ? <Icon className="h-4 w-4" aria-hidden /> : null}
