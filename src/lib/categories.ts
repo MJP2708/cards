@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import type { StoreDb } from "@/lib/db/scoped";
 import type { FieldSchema, ThemeTokens } from "@/lib/fieldSchema";
 
 export type CategoryDTO = {
@@ -12,8 +12,13 @@ export type CategoryDTO = {
   isBuiltIn: boolean;
 };
 
-export async function getCategories(): Promise<CategoryDTO[]> {
-  const rows = await prisma.category.findMany({ orderBy: { sortOrder: "asc" } });
+/**
+ * Categories are per-store, so these take the caller's scoped client rather than
+ * reaching for the shared one — passing `db` is what keeps one shop's custom
+ * categories and themes out of another's.
+ */
+export async function getCategories(db: StoreDb): Promise<CategoryDTO[]> {
+  const rows = await db.category.findMany({ orderBy: { sortOrder: "asc" } });
   return rows.map((r) => ({
     ...r,
     fieldSchema: r.fieldSchema as unknown as FieldSchema,
@@ -21,8 +26,8 @@ export async function getCategories(): Promise<CategoryDTO[]> {
   }));
 }
 
-export async function getCategoryByKey(key: string): Promise<CategoryDTO | null> {
-  const row = await prisma.category.findFirst({
+export async function getCategoryByKey(db: StoreDb, key: string): Promise<CategoryDTO | null> {
+  const row = await db.category.findFirst({
     where: { key: { equals: key, mode: "insensitive" } },
   });
   if (!row) return null;

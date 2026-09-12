@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/lib/prisma";
 import { cardInputSchema } from "@/lib/validation/card";
 import { validateAttributes } from "@/lib/validation/attributes";
 import { getCategoryByKey } from "@/lib/categories";
 import { z } from "zod";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireOwner } from "@/lib/auth/guards";
 
 const importSchema = z.object({
   category: z.string().min(1),
@@ -14,7 +13,7 @@ const importSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const gate = await requireAdmin();
+  const gate = await requireOwner();
   if ("response" in gate) return gate.response;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
@@ -23,7 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const category = await getCategoryByKey(parsed.data.category);
+  const category = await getCategoryByKey(gate.db, parsed.data.category);
   if (!category) {
     return NextResponse.json({ error: `Unknown category "${parsed.data.category}"` }, { status: 400 });
   }
@@ -37,9 +36,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: { rows: errors } }, { status: 400 });
   }
 
-  const result = await prisma.card.createMany({
+  const result = await gate.db.card.createMany({
     data: parsed.data.rows.map((row) => ({
       ...row,
+      storeId: gate.user.storeId,
       category: category.key,
       attributes: row.attributes as Prisma.InputJsonValue | undefined,
     })),

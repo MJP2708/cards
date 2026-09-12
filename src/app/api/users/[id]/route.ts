@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireOwner } from "@/lib/auth/guards";
 import { hashPassword, MIN_PASSWORD_LENGTH } from "@/lib/auth/password";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
 
@@ -16,7 +15,7 @@ const updateUserSchema = z.object({
 });
 
 export async function PATCH(request: Request, { params }: Params) {
-  const gate = await requireAdmin();
+  const gate = await requireOwner();
   if ("response" in gate) return gate.response;
 
   const { id } = await params;
@@ -29,16 +28,16 @@ export async function PATCH(request: Request, { params }: Params) {
 
   // Don't let the last admin demote themselves into a locked-out app.
   if (parsed.data.role === "STAFF") {
-    const target = await prisma.user.findUnique({ where: { id } });
+    const target = await gate.db.user.findUnique({ where: { id } });
     if (target?.role === "ADMIN") {
-      const admins = await prisma.user.count({ where: { role: "ADMIN" } });
+      const admins = await gate.db.user.count({ where: { role: "ADMIN" } });
       if (admins <= 1) {
         return NextResponse.json({ error: "This is the only admin account — promote someone else first." }, { status: 409 });
       }
     }
   }
 
-  const user = await prisma.user.update({
+  const user = await gate.db.user.update({
     where: { id },
     data: {
       ...(parsed.data.name ? { name: parsed.data.name.trim() } : {}),
@@ -51,7 +50,7 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const gate = await requireAdmin();
+  const gate = await requireOwner();
   if ("response" in gate) return gate.response;
 
   const { id } = await params;
@@ -59,10 +58,10 @@ export async function DELETE(_request: Request, { params }: Params) {
     return NextResponse.json({ error: "You can't delete your own account." }, { status: 409 });
   }
 
-  const target = await prisma.user.findUnique({ where: { id } });
+  const target = await gate.db.user.findUnique({ where: { id } });
   if (!target) return NextResponse.json({ error: "Not found" }, { status: 404 });
   if (target.role === "ADMIN") {
-    const admins = await prisma.user.count({ where: { role: "ADMIN" } });
+    const admins = await gate.db.user.count({ where: { role: "ADMIN" } });
     if (admins <= 1) {
       return NextResponse.json({ error: "This is the only admin account." }, { status: 409 });
     }
@@ -70,6 +69,6 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   // Sale.userId is ON DELETE SET NULL, so sales history survives — the sale stays,
   // it just loses its attribution.
-  await prisma.user.delete({ where: { id } });
+  await gate.db.user.delete({ where: { id } });
   return NextResponse.json({ ok: true });
 }

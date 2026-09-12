@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import type { StoreDb } from "@/lib/db/scoped";
 import { Prisma } from "@/generated/prisma/client";
 
 export type SalesReportLine = {
@@ -42,7 +42,7 @@ export type SalesReport = {
 
 const SPORTS_CATEGORIES = new Set(["NBA", "Football"]);
 
-export async function buildSalesReport(params: {
+export async function buildSalesReport(db: StoreDb, params: {
   from?: Date;
   to?: Date;
   category?: string;
@@ -58,7 +58,7 @@ export async function buildSalesReport(params: {
     where.card = { category: { equals: params.category, mode: "insensitive" } };
   }
 
-  const sales = await prisma.sale.findMany({
+  const sales = await db.sale.findMany({
     where,
     include: { card: true },
     orderBy: { timestamp: "asc" },

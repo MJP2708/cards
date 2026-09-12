@@ -1,21 +1,20 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { fetchLiveStats } from "@/lib/liveStats";
-import { requireUser } from "@/lib/auth/guards";
+import { requireStore } from "@/lib/auth/guards";
 
 const MIN_REFRESH_INTERVAL_MS = 60 * 60 * 1000; // 1 hour — free-tier rate limits are tight
 
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
-  const gate = await requireUser();
+  const gate = await requireStore();
   if ("response" in gate) return gate.response;
   const { id } = await params;
   const { searchParams } = new URL(request.url);
   const force = searchParams.get("force") === "true";
 
-  const card = await prisma.card.findUnique({ where: { id } });
+  const card = await gate.db.card.findUnique({ where: { id } });
   if (!card) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   if (!force && card.liveStatsFetchedAt) {
@@ -36,7 +35,7 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: result.error }, { status: 422 });
   }
 
-  const updated = await prisma.card.update({
+  const updated = await gate.db.card.update({
     where: { id },
     data: {
       liveStats: result.stats as unknown as Prisma.InputJsonValue,

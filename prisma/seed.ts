@@ -30,11 +30,20 @@ const FOOTBALL_THEME: ThemeTokens = {
   iconSet: "soccer",
 };
 
+/** The store the sample data belongs to. Seeding is per-store now. */
+const SEED_STORE_NAME = "Demo Store";
+
 async function main() {
+  // Reuse the demo store across runs so re-seeding tops it up rather than
+  // stacking up a new store each time.
+  const existing = await prisma.store.findFirst({ where: { name: SEED_STORE_NAME } });
+  const store = existing ?? (await prisma.store.create({ data: { name: SEED_STORE_NAME } }));
+  const storeId = store.id;
+
   await prisma.settings.upsert({
-    where: { id: "singleton" },
+    where: { storeId },
     update: {},
-    create: { id: "singleton", minMarginPct: 20 },
+    create: { storeId, minMarginPct: 20 },
   });
 
   const categories = [
@@ -60,9 +69,9 @@ async function main() {
 
   for (const category of categories) {
     await prisma.category.upsert({
-      where: { key: category.key },
+      where: { storeId_key: { storeId, key: category.key } },
       update: category,
-      create: category,
+      create: { ...category, storeId },
     });
   }
 
@@ -131,13 +140,15 @@ async function main() {
 
   for (const card of sampleCards) {
     await prisma.card.upsert({
-      where: { qrCode: card.qrCode },
+      where: { storeId_qrCode: { storeId, qrCode: card.qrCode } },
       update: {},
-      create: card,
+      create: { ...card, storeId },
     });
   }
 
-  console.log(`Seeded ${categories.length} categories and ${sampleCards.length} cards.`);
+  console.log(
+    `Seeded ${categories.length} categories and ${sampleCards.length} cards into "${SEED_STORE_NAME}".`
+  );
 }
 
 main()

@@ -1,11 +1,10 @@
 import { NextResponse, after } from "next/server";
 import { z } from "zod";
-import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma/client";
 import { cardInputSchema } from "@/lib/validation/card";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
 import { enrichNextChunk } from "@/lib/import/enrich";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireOwner } from "@/lib/auth/guards";
 
 const commitSchema = z.object({
   fileName: z.string().min(1),
@@ -24,7 +23,7 @@ const commitSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const gate = await requireAdmin();
+  const gate = await requireOwner();
   if ("response" in gate) return gate.response;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
@@ -37,13 +36,14 @@ export async function POST(request: Request) {
   const toCreate = rows.filter((row) => row.action === "new");
   const toMerge = rows.filter((row) => row.action === "merge" && row.duplicateOfId);
 
-  const batch = await prisma.importBatch.create({
-    data: { fileName, rowCount: rows.length, status: "importing" },
+  const batch = await gate.db.importBatch.create({
+    data: { storeId: gate.user.storeId, fileName, rowCount: rows.length, status: "importing" },
   });
 
-  await prisma.card.createMany({
+  await gate.db.card.createMany({
     data: toCreate.map((row) => ({
       ...row.card,
+      storeId: gate.user.storeId,
       attributes: row.card.attributes as Prisma.InputJsonValue | undefined,
       importBatchId: batch.id,
       enrichmentStatus: "pending",
@@ -54,13 +54,13 @@ export async function POST(request: Request) {
 
   // Merges only move quantity — they never overwrite pricing the user already set.
   for (const row of toMerge) {
-    await prisma.card.update({
+    await gate.db.card.update({
       where: { id: row.duplicateOfId! },
       data: { quantity: { increment: row.card.quantity ?? 1 } },
     });
   }
 
-  const updated = await prisma.importBatch.update({
+  const updated = await gate.db.importBatch.update({
     where: { id: batch.id },
     data: {
       importedCount: toCreate.length,
@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   if (toCreate.length > 0) {
     after(async () => {
       try {
-        await enrichNextChunk(batch.id);
+        await enrichNextChunk(gate.db, batch.id);
       } catch {
         // Enrichment is best-effort — the cards are already safely imported.
       }

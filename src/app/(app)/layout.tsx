@@ -23,15 +23,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const t = await getTranslations("nav");
   // The shop's own name, not a translated product name — one value for every
   // account on this install, so Admin and Staff always see the same header.
-  const storeName = await getStoreName();
+  const storeName = await getStoreName(user.storeId);
 
   const navLinks = [
     { href: "/dashboard", label: t("dashboard") },
     { href: "/reports", label: t("reports") },
     { href: "/checklist", label: t("checklist") },
-    ...(user.role === "ADMIN" ? [{ href: "/import", label: t("import") }] : []),
+    ...(user.role === "OWNER" ? [{ href: "/import", label: t("import") }] : []),
     { href: "/scan", label: t("scan") },
-    ...(user.role === "ADMIN"
+    ...(user.role === "OWNER"
       ? [
           { href: "/settings/categories", label: t("settings") },
           { href: "/settings/users", label: t("users") },

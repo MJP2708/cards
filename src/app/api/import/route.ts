@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireOwner } from "@/lib/auth/guards";
 
 /** Import history log. */
 export async function GET() {
-  const gate = await requireAdmin();
+  const gate = await requireOwner();
   if ("response" in gate) return gate.response;
-  const batches = await prisma.importBatch.findMany({
+  const batches = await gate.db.importBatch.findMany({
     orderBy: { createdAt: "desc" },
     take: 50,
   });

@@ -1,19 +1,18 @@
-import { prisma } from "@/lib/prisma";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireOwner } from "@/lib/auth/guards";
 
 export async function GET() {
   // A full database dump — cards, sales and buyer contacts. Admin only.
-  const gate = await requireAdmin();
+  const gate = await requireOwner();
   if ("response" in gate) return gate.response;
 
   const [cards, categories, sales, bundles, priceComps, filterPresets, settings] = await Promise.all([
-    prisma.card.findMany(),
-    prisma.category.findMany(),
-    prisma.sale.findMany(),
-    prisma.bundle.findMany(),
-    prisma.priceComp.findMany(),
-    prisma.filterPreset.findMany(),
-    prisma.settings.findMany(),
+    gate.db.card.findMany(),
+    gate.db.category.findMany(),
+    gate.db.sale.findMany(),
+    gate.db.bundle.findMany(),
+    gate.db.priceComp.findMany(),
+    gate.db.filterPreset.findMany(),
+    gate.db.settings.findMany(),
   ]);
 
   const backup = {

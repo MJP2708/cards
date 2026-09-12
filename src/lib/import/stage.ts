@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import type { StoreDb } from "@/lib/db/scoped";
 import { cardInputSchema, type CardInput } from "@/lib/validation/card";
 import { validateAttributes } from "@/lib/validation/attributes";
 import { getCategories, type CategoryDTO } from "@/lib/categories";
@@ -54,10 +54,11 @@ function duplicateKey(name: string, series: string, cardNumber: string | null | 
 }
 
 export async function stageRows(
+  db: StoreDb,
   rawRows: RawRow[],
   meta: { unmappedHeaders: string[]; sheetName: string | null }
 ): Promise<StagedImport> {
-  const categories = await getCategories();
+  const categories = await getCategories(db);
   const byKey = new Map<string, CategoryDTO>();
   for (const category of categories) {
     byKey.set(category.key.toLowerCase(), category);
@@ -65,7 +66,7 @@ export async function stageRows(
   }
 
   // One query for duplicate detection rather than a lookup per row.
-  const existing = await prisma.card.findMany({
+  const existing = await db.card.findMany({
     select: { id: true, name: true, series: true, cardNumber: true, quantity: true },
   });
   const existingByKey = new Map(existing.map((card) => [duplicateKey(card.name, card.series, card.cardNumber), card]));

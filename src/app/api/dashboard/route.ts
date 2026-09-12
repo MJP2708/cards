@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { buildDashboardStats } from "@/lib/reports/dashboard";
-import { requireUser } from "@/lib/auth/guards";
+import { requireStore } from "@/lib/auth/guards";
 
 export async function GET() {
-  const gate = await requireUser();
+  const gate = await requireStore();
   if ("response" in gate) return gate.response;
-  const stats = await buildDashboardStats();
+  const stats = await buildDashboardStats(gate.db);
   return NextResponse.json(stats);
 }

@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { parseWorksheet } from "@/lib/import/worksheet";
 import { stageRows } from "@/lib/import/stage";
 import { enrichmentAvailability } from "@/lib/import/enrich";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireOwner } from "@/lib/auth/guards";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 
 /** Parses and validates an uploaded worksheet. Writes nothing — this drives the preview. */
 export async function POST(request: Request) {
-  const gate = await requireAdmin();
+  const gate = await requireOwner();
   if ("response" in gate) return gate.response;
   let formData: FormData;
   try {
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
 
   try {
     const parsed = await parseWorksheet({ name: file.name, buffer: await file.arrayBuffer() });
-    const staged = await stageRows(parsed.rows, {
+    const staged = await stageRows(gate.db, parsed.rows, {
       unmappedHeaders: parsed.unmappedHeaders,
       sheetName: parsed.sheetName,
     });

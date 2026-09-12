@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import type { StoreDb } from "@/lib/db/scoped";
 import { API_SPORTS, apiSportsKey, API_SPORTS_ENV_VAR } from "@/lib/liveStats/apiSports";
 import { clearEbayAuthFailure, hasEbayCredentials, searchEbayComps } from "@/lib/comps/ebay";
 
@@ -22,14 +22,15 @@ async function timed<T>(fn: () => Promise<T>): Promise<{ value?: T; error?: stri
   }
 }
 
-async function checkDatabase(): Promise<IntegrationStatus> {
+async function checkDatabase(db: StoreDb): Promise<IntegrationStatus> {
   const base = {
     key: "database",
     label: "Neon Postgres (pooled)",
     envVars: ["DATABASE_URL"],
     powers: "Everything — inventory, sales, reports",
   };
-  const result = await timed(() => prisma.card.count());
+  // Scoped: the owner is shown their own card count, not the install total.
+  const result = await timed(() => db.card.count());
   if (result.error) {
     return { ...base, state: "down", detail: result.error, ms: result.ms };
   }
@@ -96,9 +97,9 @@ function checkBlob(): IntegrationStatus {
     : { ...base, state: "unconfigured", detail: "BLOB_READ_WRITE_TOKEN is not set.", ms: null };
 }
 
-export async function runDiagnostics(options: { force?: boolean } = {}): Promise<IntegrationStatus[]> {
+export async function runDiagnostics(db: StoreDb, options: { force?: boolean } = {}): Promise<IntegrationStatus[]> {
   const [database, nba, football, ebay] = await Promise.all([
-    checkDatabase(),
+    checkDatabase(db),
     checkApiSports("nba", "API-NBA (API-Sports)", "NBA live stats + import enrichment"),
     checkApiSports("football", "API-Football (API-Sports)", "Football live stats + import enrichment"),
     checkEbay(options.force ?? false),

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import type { StoreDb } from "@/lib/db/scoped";
 
 export type DashboardStats = {
   totalInventoryValue: number;
@@ -19,12 +19,12 @@ export type DashboardStats = {
 const AGING_THRESHOLD_DAYS = 3;
 const STALE_COMP_DAYS = 7;
 
-export async function buildDashboardStats(): Promise<DashboardStats> {
+export async function buildDashboardStats(db: StoreDb): Promise<DashboardStats> {
   const [inStockCards, soldCount, sales, hotCards] = await Promise.all([
-    prisma.card.findMany({ where: { status: "In Stock" } }),
-    prisma.card.count({ where: { status: "Sold" } }),
-    prisma.sale.findMany({ include: { card: true }, orderBy: { timestamp: "asc" } }),
-    prisma.card.findMany({
+    db.card.findMany({ where: { status: "In Stock" } }),
+    db.card.count({ where: { status: "Sold" } }),
+    db.sale.findMany({ include: { card: true }, orderBy: { timestamp: "asc" } }),
+    db.card.findMany({
       where: { isHot: true, status: { not: "Sold" } },
       include: { priceComps: { orderBy: { fetchedAt: "desc" }, take: 1 } },
     }),

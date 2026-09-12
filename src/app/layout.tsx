@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { getStoreName } from "@/lib/storeName";
+import { APP_NAME, getStoreName } from "@/lib/storeName";
+import { getSessionUser } from "@/lib/auth/guards";
 import { Geist, Geist_Mono, Oswald, Barlow_Condensed, Baloo_2, Cinzel, Kanit, Chakra_Petch, Noto_Sans_Thai } from "next/font/google";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
@@ -46,10 +47,12 @@ const notoSansThai = Noto_Sans_Thai({
 });
 
 // generateMetadata rather than a static `metadata` object so the tab title
-// follows the store's name, and picks up a rename on the next render. A segment
-// may export one or the other, never both.
+// follows the signed-in user's store, and picks up a rename on the next render.
+// A segment may export one or the other, never both. Signed-out visitors (/login,
+// /signup) have no store, so they get the product name.
 export async function generateMetadata(): Promise<Metadata> {
-  const storeName = await getStoreName();
+  const user = await getSessionUser();
+  const storeName = user ? await getStoreName(user.storeId) : APP_NAME;
   return {
     title: `${storeName} — Convention Inventory & Sales`,
     description: "Multi-category trading card inventory, research, and sales tracker",

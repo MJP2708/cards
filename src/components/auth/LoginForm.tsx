@@ -6,13 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { InlineError } from "@/components/ui/InlineError";
 
-export function LoginForm({
-  storeName,
-  signupAvailable,
-}: {
-  storeName: string;
-  signupAvailable: boolean;
-}) {
+export function LoginForm({ appName }: { appName: string }) {
   const router = useRouter();
   const params = useSearchParams();
   const [email, setEmail] = useState("");
@@ -38,7 +32,7 @@ export function LoginForm({
   return (
     <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">{storeName}</h1>
+        <h1 className="text-2xl font-semibold">{appName}</h1>
         <p className="mt-1 text-sm text-foreground/60">Sign in to continue.</p>
       </div>
       <label className="block text-sm">
@@ -71,16 +65,14 @@ export function LoginForm({
       >
         {busy ? "Signing in…" : "Sign in"}
       </button>
-      {/* Only shown while the store has no owner yet — afterwards accounts come
-          from an Admin in Settings -> Users, so offering it would be a dead end. */}
-      {signupAvailable && (
-        <p className="text-center text-sm text-foreground/60">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="font-medium text-accent hover:underline">
-            Sign up
-          </Link>
-        </p>
-      )}
+      {/* Sign-up is open: each one creates its own store. Staff of an existing
+          store are added by its owner instead, not through here. */}
+      <p className="text-center text-sm text-foreground/60">
+        Don&apos;t have an account?{" "}
+        <Link href="/signup" className="font-medium text-accent hover:underline">
+          Sign up
+        </Link>
+      </p>
     </form>
   );
 }

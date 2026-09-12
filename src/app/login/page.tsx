@@ -1,16 +1,14 @@
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { getStoreName } from "@/lib/storeName";
-import { signupAvailable } from "@/lib/auth/signup";
+import { APP_NAME } from "@/lib/storeName";
 
-export default async function LoginPage() {
-  const [storeName, canSignUp] = await Promise.all([getStoreName(), signupAvailable()]);
-
+export default function LoginPage() {
   return (
     <main className="flex min-h-dvh items-center justify-center px-4 py-10">
-      {/* LoginForm reads ?next= via useSearchParams, which needs a Suspense boundary. */}
+      {/* The product name, not a store name: a signed-out visitor has no store
+          yet, so there is nothing tenant-specific to show here. */}
       <Suspense fallback={null}>
-        <LoginForm storeName={storeName} signupAvailable={canSignUp} />
+        <LoginForm appName={APP_NAME} />
       </Suspense>
     </main>
   );

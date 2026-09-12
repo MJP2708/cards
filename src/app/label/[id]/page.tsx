@@ -1,13 +1,19 @@
 import QRCode from "qrcode";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { getTranslations } from "next-intl/server";
-import { prisma } from "@/lib/prisma";
+import { getSessionUser } from "@/lib/auth/guards";
+import { storeDb } from "@/lib/db/scoped";
 import { PrintButton } from "@/components/PrintButton";
 
 export default async function LabelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  // This page had no gate: any id printed a label for it, across stores. The
+  // scoped client turns another store's card into a plain 404.
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+
   const t = await getTranslations("common");
-  const card = await prisma.card.findUnique({ where: { id } });
+  const card = await storeDb(user.storeId).card.findUnique({ where: { id } });
   if (!card) notFound();
 
   const code = card.qrCode ?? card.id;

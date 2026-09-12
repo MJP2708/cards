@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/lib/prisma";
 import { cardInputSchema } from "@/lib/validation/card";
 import { validateAttributes } from "@/lib/validation/attributes";
 import { getCategoryByKey } from "@/lib/categories";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
-import { requireUser } from "@/lib/auth/guards";
+import { requireStore } from "@/lib/auth/guards";
 
 const SORTABLE_FIELDS = new Set([
   "name",
@@ -20,7 +19,7 @@ const SORTABLE_FIELDS = new Set([
 ]);
 
 export async function GET(request: Request) {
-  const gate = await requireUser();
+  const gate = await requireStore();
   if ("response" in gate) return gate.response;
   const { searchParams } = new URL(request.url);
   const category = searchParams.get("category");
@@ -56,12 +55,12 @@ export async function GET(request: Request) {
 
   const orderBy = SORTABLE_FIELDS.has(sort) ? { [sort]: order } : { dateAdded: "desc" as const };
 
-  const cards = await prisma.card.findMany({ where, orderBy });
+  const cards = await gate.db.card.findMany({ where, orderBy });
   return NextResponse.json(cards);
 }
 
 export async function POST(request: Request) {
-  const gate = await requireUser();
+  const gate = await requireStore();
   if ("response" in gate) return gate.response;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
@@ -70,7 +69,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const category = await getCategoryByKey(parsed.data.category);
+  const category = await getCategoryByKey(gate.db, parsed.data.category);
   if (!category) {
     return NextResponse.json({ error: `Unknown category "${parsed.data.category}"` }, { status: 400 });
   }
@@ -81,6 +80,7 @@ export async function POST(request: Request) {
 
   const data = {
     ...parsed.data,
+    storeId: gate.user.storeId,
     category: category.key,
     attributes: parsed.data.attributes as Prisma.InputJsonValue,
   };
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
   // Offline-created cards replay with their client-generated id so it never needs
   // remapping once synced; upsert makes a retried replay after a dropped response idempotent.
   const card = parsed.data.id
-    ? await prisma.card.upsert({ where: { id: parsed.data.id }, create: data, update: {} })
-    : await prisma.card.create({ data });
+    ? await gate.db.card.upsert({ where: { id: parsed.data.id }, create: data, update: {} })
+    : await gate.db.card.create({ data });
   return NextResponse.json(card, { status: 201 });
 }

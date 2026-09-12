@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { fromUsd } from "@/lib/currency";
-import { requireUser } from "@/lib/auth/guards";
+import { requireStore } from "@/lib/auth/guards";
 import {
   EBAY_COMP_SOURCE,
   buildQuery,
@@ -15,7 +14,7 @@ const MIN_REFRESH_INTERVAL_MS = 60 * 60 * 1000; // same 1-hour guard as refresh-
 type Params = { params: Promise<{ id: string }> };
 
 export async function POST(request: Request, { params }: Params) {
-  const gate = await requireUser();
+  const gate = await requireStore();
   if ("response" in gate) return gate.response;
   const { id } = await params;
   const { searchParams } = new URL(request.url);
@@ -25,13 +24,13 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: missingCredentialsError() }, { status: 422 });
   }
 
-  const card = await prisma.card.findUnique({ where: { id } });
+  const card = await gate.db.card.findUnique({ where: { id } });
   if (!card) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
   // Everything in this app is denominated in THB and eBay quotes USD. Without a
   // configured rate we would be writing dollar figures into baht fields, so refuse
   // rather than silently misprice the card by ~35x.
-  const settings = await prisma.settings.findUnique({ where: { id: "singleton" } });
+  const settings = await gate.db.settings.findUnique({ where: { id: "singleton" } });
   if (!settings?.usdExchangeRate) {
     return NextResponse.json(
       { error: "Set a THB-per-USD exchange rate in Settings first — eBay quotes prices in USD." },
@@ -39,13 +38,13 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const existing = await prisma.priceComp.findMany({
+  const existing = await gate.db.priceComp.findMany({
     where: { cardId: id, source: EBAY_COMP_SOURCE },
     orderBy: { fetchedAt: "desc" },
     take: 1,
   });
   if (!force && existing[0] && Date.now() - existing[0].fetchedAt.getTime() < MIN_REFRESH_INTERVAL_MS) {
-    const cached = await prisma.priceComp.findMany({ where: { cardId: id }, orderBy: { fetchedAt: "desc" } });
+    const cached = await gate.db.priceComp.findMany({ where: { cardId: id }, orderBy: { fetchedAt: "desc" } });
     return NextResponse.json({ comps: cached, cached: true });
   }
 
@@ -65,10 +64,11 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   // Replace only previously auto-fetched comps — comps logged by hand are left alone.
-  await prisma.$transaction([
-    prisma.priceComp.deleteMany({ where: { cardId: id, source: EBAY_COMP_SOURCE } }),
-    prisma.priceComp.createMany({
+  await gate.db.$transaction([
+    gate.db.priceComp.deleteMany({ where: { cardId: id, source: EBAY_COMP_SOURCE } }),
+    gate.db.priceComp.createMany({
       data: results.map((result) => ({
+        storeId: gate.user.storeId,
         cardId: id,
         source: EBAY_COMP_SOURCE,
         price: Math.round(fromUsd(result.priceUsd, settings.usdExchangeRate)!),
@@ -77,6 +77,6 @@ export async function POST(request: Request, { params }: Params) {
     }),
   ]);
 
-  const comps = await prisma.priceComp.findMany({ where: { cardId: id }, orderBy: { fetchedAt: "desc" } });
+  const comps = await gate.db.priceComp.findMany({ where: { cardId: id }, orderBy: { fetchedAt: "desc" } });
   return NextResponse.json({ comps, cached: false, query, matched: results.length });
 }

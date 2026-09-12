@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { isPrismaNotFoundError, notFoundResponse } from "@/lib/api";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireOwner } from "@/lib/auth/guards";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -9,15 +8,15 @@ type Params = { params: Promise<{ id: string }> };
 // In Stock status, then deletes the Sale record. Only meaningful within the
 // toast's short grace window; not exposed as a general "unsell" feature.
 export async function DELETE(_request: Request, { params }: Params) {
-  const gate = await requireAdmin();
+  const gate = await requireOwner();
   if ("response" in gate) return gate.response;
   const { id } = await params;
 
   try {
-    const sale = await prisma.sale.findUniqueOrThrow({ where: { id }, include: { card: true } });
+    const sale = await gate.db.sale.findUniqueOrThrow({ where: { id }, include: { card: true } });
 
-    await prisma.$transaction([
-      prisma.card.update({
+    await gate.db.$transaction([
+      gate.db.card.update({
         where: { id: sale.cardId },
         data: {
           quantity: sale.card.quantity + sale.quantitySold,
@@ -26,7 +25,7 @@ export async function DELETE(_request: Request, { params }: Params) {
           soldPrice: null,
         },
       }),
-      prisma.sale.delete({ where: { id } }),
+      gate.db.sale.delete({ where: { id } }),
     ]);
 
     return NextResponse.json({ ok: true });

@@ -10,8 +10,34 @@ datasource db {
   provider = "postgresql"
 }
 
+/// The tenant. Every row of inventory, sales and configuration belongs to exactly
+/// one Store, and no query may cross that line — see `src/lib/db/scoped.ts`, which
+/// enforces it centrally rather than trusting ~336 call sites to remember a filter.
+///
+/// Signing up creates a Store and makes the signer-up its OWNER, so a brand new
+/// account starts with its own empty inventory. Owners can then add members.
+model Store {
+  id        String   @id @default(cuid())
+  /// Shown in the app header, the browser tab and on sales report PDFs.
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users         User[]
+  cards         Card[]
+  categories    Category[]
+  sales         Sale[]
+  bundles       Bundle[]
+  priceComps    PriceComp[]
+  filterPresets FilterPreset[]
+  importBatches ImportBatch[]
+  settings      Settings?
+}
+
 model Card {
   id          String    @id @default(cuid())
+  storeId     String
+  store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   category    String // "NBA", "Football", "Pokemon", "TCG-MTG", "TCG-OnePiece", etc.
   name        String // player name (sports) or card name (Pokemon/TCG) — used for search
   series      String // set/expansion/series name
@@ -27,12 +53,14 @@ model Card {
   status      String    @default("In Stock") // In Stock, Sold, Reserved, On Hold
   photoFront  String?
   photoBack   String?
-  qrCode      String?   @unique
+  // Unique per store, not globally: two stores printing their own labels must be
+  // able to use the same short code without colliding.
+  qrCode      String?
   packed      Boolean   @default(false) // pre-event staging checklist
   isHot       Boolean   @default(false) // manual "hot card" flag
   hotNote     String?
   researchNotes String? // manual set/card background notes for the Fact Sheet panel
-  liveStats        Json? // cached balldontlie/API-Football player stats snapshot
+  liveStats        Json? // cached API-Sports player stats snapshot
   liveStatsFetchedAt DateTime? // rate limits are tight (100 req/day free tier) — cache, don't poll
   dateAdded   DateTime  @default(now())
   dateSold    DateTime?
@@ -52,28 +80,36 @@ model Card {
   sales      Sale[]
   priceComps PriceComp[]
 
-  @@index([category, status])
-  @@index([name])
+  @@unique([storeId, qrCode])
+  @@index([storeId, category, status])
+  @@index([storeId, name])
   @@index([importBatchId])
 }
 
 model Category {
   id          String  @id @default(cuid())
-  key         String  @unique // "NBA", "Pokemon", etc.
+  storeId     String
+  store       Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  key         String // "NBA", "Pokemon", etc. — unique within a store, not globally
   displayName String
   icon        String? // for the tab/sidebar UI
   sortOrder   Int     @default(0)
   fieldSchema Json // defines which attribute fields this category shows on its Add/Edit form
   themeTokens Json // e.g. { "accent": "#F97316", "accentDark": "#C2410C", "surface": "#1C1917" }
   isBuiltIn   Boolean @default(false)
+
+  @@unique([storeId, key])
+  @@index([storeId])
 }
 
 model Sale {
   id            String   @id @default(cuid())
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   cardId        String
   card          Card     @relation(fields: [cardId], references: [id])
-  // Audit trail: who rang this sale up. Nullable so sales recorded before the
-  // user system existed (and any future automated entry) remain valid.
+  // Audit trail: which member rang this sale up. Nullable so sales recorded before
+  // the user system existed (and any future automated entry) remain valid.
   userId        String?
   user          User?    @relation(fields: [userId], references: [id])
   soldPrice     Float
@@ -84,21 +120,27 @@ model Sale {
   bundleId      String?
   bundle        Bundle?  @relation(fields: [bundleId], references: [id])
 
-  @@index([timestamp])
+  @@index([storeId, timestamp])
   @@index([cardId])
 }
 
 model Bundle {
   id            String   @id @default(cuid())
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   timestamp     DateTime @default(now())
   totalPrice    Float
   paymentMethod String
   buyerContact  String?
   sales         Sale[]
+
+  @@index([storeId])
 }
 
 model PriceComp {
   id        String   @id @default(cuid())
+  storeId   String
+  store     Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   cardId    String
   card      Card     @relation(fields: [cardId], references: [id])
   source    String // "eBay", "manual", "130point", "TCGplayer", "PriceCharting"
@@ -107,24 +149,27 @@ model PriceComp {
   fetchedAt DateTime @default(now())
 
   @@index([cardId])
+  @@index([storeId])
 }
 
 model FilterPreset {
   id         String  @id @default(cuid())
+  storeId    String
+  store      Store   @relation(fields: [storeId], references: [id], onDelete: Cascade)
   name       String
   category   String? // null = applies across "All categories"
   filterJson Json
   createdAt  DateTime @default(now())
+
+  @@index([storeId])
 }
 
+/// Per-store preferences. One row per store — the old single-install "singleton"
+/// row is gone now that several stores share the database.
 model Settings {
-  id                    String    @id @default("singleton")
-  // The store's own name, shown wherever the app used to say "Booth Cards".
-  // It lives here rather than on User because this install is single-tenant:
-  // one inventory shared by every account, so Admin and Staff must always see
-  // the same name. The default keeps pre-existing installs rendering exactly
-  // as before until an owner sets a real one at sign-up.
-  storeName             String    @default("Booth Cards")
+  id                    String    @id @default(cuid())
+  storeId               String    @unique
+  store                 Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
   minMarginPct          Float     @default(20)
   usdExchangeRate       Float?
   exchangeRateFetchedAt DateTime?
@@ -134,6 +179,8 @@ model Settings {
 /// and doubles as the import history log.
 model ImportBatch {
   id            String   @id @default(cuid())
+  storeId       String
+  store         Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
   fileName      String
   createdAt     DateTime @default(now())
   rowCount      Int
@@ -146,11 +193,15 @@ model ImportBatch {
 
   cards Card[]
 
-  @@index([createdAt])
+  @@index([storeId, createdAt])
 }
 
 /// Enrichment lookups keyed by category+name+series so a re-import of similar cards
 /// doesn't re-spend the 100 req/day free-tier quota on the same players.
+///
+/// Deliberately NOT per-store: this caches public player statistics, so sharing it
+/// across stores is both correct and the thing that keeps the shared API quota
+/// survivable. It holds no store's private data.
 model EnrichmentCache {
   key       String   @id
   provider  String
@@ -161,17 +212,20 @@ model EnrichmentCache {
   @@index([fetchedAt])
 }
 
-/// Booth staff accounts. There is no public signup — an ADMIN creates every account.
+/// An account. Every user belongs to exactly one store: signing up creates a new
+/// store with that user as OWNER, and an OWNER can add MEMBERs to their own store.
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
   passwordHash String
   name         String
-  role         String   @default("STAFF") // "ADMIN" | "STAFF"
+  storeId      String
+  store        Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  role         String   @default("MEMBER") // "OWNER" | "MEMBER"
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
   sales Sale[]
 
-  @@index([role])
+  @@index([storeId, role])
 }

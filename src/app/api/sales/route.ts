@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
 import { markSoldSchema } from "@/lib/validation/card";
 import { z } from "zod";
 import { Prisma } from "@/generated/prisma/client";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
-import { requireUser } from "@/lib/auth/guards";
+import { requireStore } from "@/lib/auth/guards";
 
 const saleCreateSchema = markSoldSchema.extend({ cardId: z.string() });
 
 export async function GET(request: Request) {
-  const gate = await requireUser();
+  const gate = await requireStore();
   if ("response" in gate) return gate.response;
   const { searchParams } = new URL(request.url);
   const from = searchParams.get("from");
@@ -27,7 +26,7 @@ export async function GET(request: Request) {
     where.card = { category: { equals: category, mode: "insensitive" } };
   }
 
-  const sales = await prisma.sale.findMany({
+  const sales = await gate.db.sale.findMany({
     where,
     include: { card: true, bundle: true },
     orderBy: { timestamp: "desc" },
@@ -36,7 +35,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const gate = await requireUser();
+  const gate = await requireStore();
   if ("response" in gate) return gate.response;
   const json = await readJsonBody(request);
   if (!json.ok) return invalidJsonResponse();
@@ -46,20 +45,28 @@ export async function POST(request: Request) {
   }
   const { cardId, quantitySold, soldPrice, paymentMethod, buyerContact, buyerNote } = parsed.data;
 
-  const card = await prisma.card.findUnique({ where: { id: cardId } });
+  const card = await gate.db.card.findUnique({ where: { id: cardId } });
   if (!card) return NextResponse.json({ error: "Card not found" }, { status: 404 });
   if (quantitySold > card.quantity) {
     return NextResponse.json({ error: `Only ${card.quantity} in stock` }, { status: 400 });
   }
 
   const remaining = card.quantity - quantitySold;
-  const [sale] = await prisma.$transaction([
-    prisma.sale.create({
+  const [sale] = await gate.db.$transaction([
+    gate.db.sale.create({
       // userId is the audit trail: with several people on the till, this is how a
       // questionable sale gets traced back to who rang it up.
-      data: { cardId, soldPrice, quantitySold, paymentMethod, buyerContact, userId: gate.user.id },
+      data: {
+        storeId: gate.user.storeId,
+        cardId,
+        soldPrice,
+        quantitySold,
+        paymentMethod,
+        buyerContact,
+        userId: gate.user.id,
+      },
     }),
-    prisma.card.update({
+    gate.db.card.update({
       where: { id: cardId },
       data: {
         quantity: remaining,
