@@ -78,7 +78,7 @@ export function UsersManager({ initialUsers, currentUserId }: { initialUsers: Us
               <div className="flex gap-2">
                 <button
                   onClick={() => setResetFor(resetFor === user.id ? null : user.id)}
-                  className="rounded-md border border-border-1 px-2 py-1 text-xs hover:bg-surface-1"
+                  className="tap-compact rounded-md border border-border-1 px-2 py-1 text-xs hover:bg-surface-1"
                 >
                   Reset password
                 </button>
@@ -86,7 +86,7 @@ export function UsersManager({ initialUsers, currentUserId }: { initialUsers: Us
                   <button
                     onClick={() => remove(user.id)}
                     disabled={busy}
-                    className="rounded-md border border-border-1 px-2 py-1 text-xs text-red-600 hover:bg-surface-1"
+                    className="tap-compact rounded-md border border-border-1 px-2 py-1 text-xs text-red-600 hover:bg-surface-1"
                   >
                     Remove
                   </button>
@@ -96,7 +96,8 @@ export function UsersManager({ initialUsers, currentUserId }: { initialUsers: Us
             {resetFor === user.id && (
               <div className="mt-2 flex flex-wrap gap-2">
                 <input
-                  type="text"
+                  type="password"
+                  autoComplete="new-password"
                   value={resetPassword}
                   onChange={(e) => setResetPassword(e.target.value)}
                   placeholder={t("newPassword")}
@@ -105,7 +106,7 @@ export function UsersManager({ initialUsers, currentUserId }: { initialUsers: Us
                 <button
                   onClick={() => doReset(user.id)}
                   disabled={busy || resetPassword.length < 8}
-                  className="rounded-md bg-foreground px-3 py-1 text-xs text-background disabled:opacity-50"
+                  className="tap-compact rounded-md bg-foreground px-3 py-1 text-xs text-background disabled:opacity-50"
                 >
                   Set
                 </button>
@@ -129,7 +130,7 @@ export function UsersManager({ initialUsers, currentUserId }: { initialUsers: Us
             className="rounded-md border border-border-1 bg-transparent px-3 py-2 text-sm"
           />
           <input
-            type="text" required minLength={8} placeholder={t("passwordMin")} value={form.password}
+            type="password" autoComplete="new-password" required minLength={8} placeholder={t("passwordMin")} value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             className="rounded-md border border-border-1 bg-transparent px-3 py-2 text-sm"
           />

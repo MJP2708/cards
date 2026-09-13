@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { PackagePlus, Upload, Inbox, SearchX, LayoutGrid, Rows3, Plus } from "lucide-react";
+import { PackagePlus, Upload, Inbox, SearchX, LayoutGrid, Rows3, Plus, CircleDollarSign } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
 import { useCards } from "@/lib/data/cards";
@@ -78,7 +78,11 @@ function InventoryRow({
           photoFront={card.photoFront}
           name={card.name}
           themeTokens={cardCategory?.themeTokens}
-          size="md"
+          /* 40px rather than 64px: in a dense row the thumbnail is an at-a-glance
+             cue, not the subject, and the 24px it gives back is the difference
+             between "Victor We…" and a readable card name on a phone. The grid
+             view is where the full-size image lives. */
+          size="sm"
           onClick={() => onViewPhoto(card)}
         />
       </td>
@@ -97,7 +101,10 @@ function InventoryRow({
           </span>
         </td>
       )}
-      <td className="px-3 py-2">
+      {/* `w-full max-w-0` is the table-cell truncation idiom: the cell claims the
+          leftover width but refuses to grow to fit its content, so long card names
+          ellipsize rather than widening the row past the viewport. */}
+      <td className="w-full max-w-0 px-3 py-2">
         <Link
           href={selectionActive ? "#" : `/${card.category.toLowerCase()}/card/${card.id}`}
           onClick={(e) => {
@@ -106,7 +113,7 @@ function InventoryRow({
               onToggleSelect(card.id);
             }
           }}
-          className="font-medium hover:underline"
+          className="tap-compact block truncate font-medium hover:underline"
         >
           {card.name}
         </Link>
@@ -116,8 +123,8 @@ function InventoryRow({
           </Badge>
         )}
         {/* Series + status ride along under the name below `md`, since those columns hide there. */}
-        <div className="flex items-center gap-1.5 md:hidden">
-          <p className="truncate text-xs text-foreground/50">{card.series}</p>
+        <div className="flex min-w-0 items-center gap-1.5 md:hidden">
+          <p className="hidden min-w-0 truncate text-xs text-foreground/50 sm:block">{card.series}</p>
           <StatusPill status={card.status} className="sm:hidden" />
         </div>
       </td>
@@ -133,8 +140,17 @@ function InventoryRow({
       </td>
       <td className="px-3 py-2 text-right">
         {card.status !== "Sold" && (
-          <Button size="sm" onClick={() => onMarkSold(card)}>
-            {common("markSold")}
+          /* Icon-only on phones. The Thai label is long enough that the text
+             button pushed this column past the viewport, so the shop's most-used
+             action sat off-screen behind a horizontal scroll. */
+          <Button
+            size="sm"
+            onClick={() => onMarkSold(card)}
+            aria-label={common("markSold")}
+            icon={CircleDollarSign}
+            className="min-h-11 min-w-11 whitespace-nowrap sm:min-h-0 sm:min-w-0"
+          >
+            <span className="hidden sm:inline">{common("markSold")}</span>
           </Button>
         )}
       </td>
@@ -312,9 +328,9 @@ export default function CategoryInventoryPage() {
               <thead className="bg-surface-1 text-left text-xs uppercase text-foreground/60">
                 <tr>
                   <th className="w-8 px-1 py-2"></th>
-                  <th className="w-16 px-1 py-2"></th>
+                  <th className="w-12 px-1 py-2"></th>
                   {isAll && <th className="hidden px-3 py-2 sm:table-cell">{t("colCategory")}</th>}
-                  <th className="px-3 py-2">{t("colName")}</th>
+                  <th className="w-full max-w-0 px-3 py-2">{t("colName")}</th>
                   <th className="hidden px-3 py-2 md:table-cell">{t("colSeriesSet")}</th>
                   <th className="hidden px-3 py-2 lg:table-cell">{t("colRarity")}</th>
                   <th className="hidden px-3 py-2 lg:table-cell">{t("colGrade")}</th>

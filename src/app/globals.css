@@ -291,3 +291,28 @@ button:not(:disabled):active, a[role="button"]:not(:disabled):active {
 .pb-safe {
   padding-bottom: calc(env(safe-area-inset-bottom, 0px));
 }
+
+/* Comfortable touch target for small icon buttons and chips.
+   
+   This class was referenced at 25 call sites but never actually defined, so
+   every control relying on it — the lightbox close, filter chips, the command
+   palette button — had no touch sizing at all and sat well under the ~44px
+   guidance on a phone. A mis-tap here is a real-money mistake at a live sale.
+   
+   The hit area is expanded with a centred pseudo-element rather than by growing
+   the element itself, so the visual design is unchanged while the tappable
+   region reaches 44x44. */
+.tap-compact {
+  position: relative;
+}
+.tap-compact::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: 100%;
+  height: 100%;
+  min-width: 44px;
+  min-height: 44px;
+}

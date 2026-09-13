@@ -19,7 +19,7 @@ export function StatusPill({ status, className = "" }: { status: CardDTO["status
 
   return (
     <span
-      className={`inline-flex w-fit items-center gap-1.5 rounded-full px-2 py-0.5 text-xs font-medium ${className}`}
+      className={`inline-flex w-fit shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium ${className}`}
       style={{ background: vars.tint, color: vars.color }}
     >
       <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: vars.color }} aria-hidden />
