@@ -8,8 +8,8 @@ type Params = { params: Promise<{ id: string }> };
 
 const updateUserSchema = z.object({
   name: z.string().min(1).optional(),
-  role: z.enum(["ADMIN", "STAFF"]).optional(),
-  // Admin-assisted reset: an admin sets a new password directly, so no email
+  role: z.enum(["OWNER", "MEMBER"]).optional(),
+  // Owner-assisted reset: the owner sets a new password directly, so no email
   // service is needed to get a locked-out helper back on the till mid-event.
   password: z.string().min(MIN_PASSWORD_LENGTH).optional(),
 });
@@ -26,13 +26,18 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  // Don't let the last admin demote themselves into a locked-out app.
-  if (parsed.data.role === "STAFF") {
+  // Don't let the last owner demote themselves and lock the store out of its own
+  // settings. This counted the pre-multi-tenancy "ADMIN" role, which no longer
+  // exists — so the count was always 0 and the guard never fired.
+  if (parsed.data.role === "MEMBER") {
     const target = await gate.db.user.findUnique({ where: { id } });
-    if (target?.role === "ADMIN") {
-      const admins = await gate.db.user.count({ where: { role: "ADMIN" } });
-      if (admins <= 1) {
-        return NextResponse.json({ error: "This is the only admin account — promote someone else first." }, { status: 409 });
+    if (target?.role === "OWNER") {
+      const owners = await gate.db.user.count({ where: { role: "OWNER" } });
+      if (owners <= 1) {
+        return NextResponse.json(
+          { error: "This is the store's only owner — promote someone else first." },
+          { status: 409 }
+        );
       }
     }
   }
@@ -60,10 +65,10 @@ export async function DELETE(_request: Request, { params }: Params) {
 
   const target = await gate.db.user.findUnique({ where: { id } });
   if (!target) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (target.role === "ADMIN") {
-    const admins = await gate.db.user.count({ where: { role: "ADMIN" } });
-    if (admins <= 1) {
-      return NextResponse.json({ error: "This is the only admin account." }, { status: 409 });
+  if (target.role === "OWNER") {
+    const owners = await gate.db.user.count({ where: { role: "OWNER" } });
+    if (owners <= 1) {
+      return NextResponse.json({ error: "This is the store's only owner." }, { status: 409 });
     }
   }
 

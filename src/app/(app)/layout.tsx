@@ -42,10 +42,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* Row 1 shrinks on mobile — MoreMenu (language/dark) stays here
-          for desktop, since the mobile "More" sheet lives in the bottom tab
-          bar instead. Row 2's link list is desktop-only for the same reason:
-          those five destinations already have thumb-zone equivalents below. */}
+      {/* Row 1 shrinks on mobile — MoreMenu (language/dark) and the user menu
+          stay here for desktop; on a phone both live in the "More" sheet on the
+          bottom tab bar, which is handed the same role-aware `navLinks` so no
+          destination can be desktop-only by omission. */}
       <header className="border-b border-border-1 bg-background">
         <div className="flex flex-wrap items-center gap-3 px-4 py-2.5 md:py-3">
           <Link href="/all" className="shrink-0 text-base font-semibold md:text-lg">
@@ -67,7 +67,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </div>
       </header>
       <main className="motif-surface flex-1 px-4 py-6 pb-24 md:pb-6">{children}</main>
-      <MobileTabBar />
+      <MobileTabBar links={navLinks} user={{ name: user.name, role: user.role }} />
       <CommandPalette />
       <OnboardingTour />
     </div>

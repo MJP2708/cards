@@ -83,6 +83,19 @@ async function main() {
   });
   check("create stamps the caller's storeId", created.storeId === alpha.id);
 
+  console.log("\ninteractive transactions");
+  // The sales and bundle routes do their work inside $transaction(async (tx) => ...).
+  // If the scoping extension did not apply to `tx`, those callbacks would silently
+  // operate across tenants, so assert it directly rather than assuming.
+  const txSeen = await a.$transaction(async (tx) => tx.card.findMany());
+  check(
+    "tx client is scoped inside $transaction",
+    txSeen.every((c) => c.storeId === alpha.id) && !txSeen.some((c) => c.id === betaCard.id),
+    `saw ${txSeen.length}`
+  );
+  const txBeta = await a.$transaction(async (tx) => tx.card.findUnique({ where: { id: betaCard.id } }));
+  check("tx cannot read Beta's card by id", txBeta === null);
+
   console.log("\nshared tables");
   await prisma.enrichmentCache.create({ data: { key: "nba|x|y", provider: "nba", hit: true } });
   check("EnrichmentCache stays shared (not scoped away)", (await a.enrichmentCache.count()) === 1);

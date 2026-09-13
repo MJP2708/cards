@@ -11,7 +11,14 @@ import { MoreSheet } from "@/components/nav/MoreSheet";
 // reach zone for a thumb on a phone held one-handed, which is the primary
 // grip this product is built for. These four destinations now sit in the
 // thumb zone instead; the top header only needs to carry search and status.
-export function MobileTabBar() {
+export function MobileTabBar({
+  links,
+  user,
+}: {
+  /** The layout's role-aware nav list, shared with the desktop header. */
+  links: { href: string; label: string }[];
+  user: { name: string; role: string };
+}) {
   const t = useTranslations("nav");
   const pathname = usePathname() ?? "/";
   const [moreOpen, setMoreOpen] = useState(false);
@@ -54,7 +61,7 @@ export function MobileTabBar() {
           <span style={{ color: isMoreSection ? "var(--accent)" : undefined, opacity: isMoreSection ? 1 : 0.6 }}>{t("more")}</span>
         </button>
       </nav>
-      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} />
+      <MoreSheet open={moreOpen} onClose={() => setMoreOpen(false)} links={links} user={user} />
     </>
   );
 }

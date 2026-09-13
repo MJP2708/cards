@@ -51,9 +51,41 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Only ${card.quantity} in stock` }, { status: 400 });
   }
 
-  const remaining = card.quantity - quantitySold;
-  const [sale] = await gate.db.$transaction([
-    gate.db.sale.create({
+  /**
+   * The stock check and the decrement have to be one atomic step.
+   *
+   * Reading the quantity, checking it, then writing `quantity - quantitySold` as an
+   * absolute value loses a decrement when two people sell the same card at once:
+   * both read 2, both pass the check, both write 1, and the shop has sold two
+   * copies but only counted one. With several phones on the till at a busy table
+   * that is a routine race, not a rare one. The guarded `updateMany` below lets
+   * Postgres arbitrate instead — whoever loses gets a 409 and can retry against
+   * fresh stock.
+   */
+  const sale = await gate.db.$transaction(async (tx) => {
+    const claimed = await tx.card.updateMany({
+      where: { id: cardId, storeId: gate.user.storeId, quantity: { gte: quantitySold } },
+      data: { quantity: { decrement: quantitySold } },
+    });
+    if (claimed.count === 0) return null;
+
+    const after = await tx.card.findUnique({
+      where: { id: cardId, storeId: gate.user.storeId },
+      select: { quantity: true },
+    });
+
+    const soldOut = (after?.quantity ?? 0) <= 0;
+    if (soldOut || buyerNote) {
+      await tx.card.update({
+        where: { id: cardId, storeId: gate.user.storeId },
+        data: {
+          ...(soldOut ? { status: "Sold", dateSold: new Date(), soldPrice } : {}),
+          ...(buyerNote ? { buyerNote } : {}),
+        },
+      });
+    }
+
+    return tx.sale.create({
       // userId is the audit trail: with several people on the till, this is how a
       // questionable sale gets traced back to who rang it up.
       data: {
@@ -65,17 +97,14 @@ export async function POST(request: Request) {
         buyerContact,
         userId: gate.user.id,
       },
-    }),
-    gate.db.card.update({
-      where: { id: cardId },
-      data: {
-        quantity: remaining,
-        ...(remaining <= 0
-          ? { status: "Sold", dateSold: new Date(), soldPrice }
-          : {}),
-        ...(buyerNote ? { buyerNote } : {}),
-      },
-    }),
-  ]);
+    });
+  });
+
+  if (!sale) {
+    return NextResponse.json(
+      { error: "That card's stock changed while you were selling. Reload and try again." },
+      { status: 409 }
+    );
+  }
   return NextResponse.json(sale, { status: 201 });
 }

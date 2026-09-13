@@ -36,7 +36,7 @@ async function main() {
   console.log(`  socket: ${family} ${address}`);
 
   // Row counts for the tables that matter when checking the install is clean.
-  const tables = ["User", "Card", "Sale", "Bundle", "PriceComp", "ImportBatch", "EnrichmentCache", "Settings"];
+  const tables = ["Store", "User", "Card", "Category", "Sale", "Bundle", "PriceComp", "ImportBatch", "EnrichmentCache", "Settings"];
   console.log("\nrow counts:");
   for (const table of tables) {
     try {
@@ -45,6 +45,18 @@ async function main() {
     } catch {
       console.log(`  ${table.padEnd(16)} (no such table)`);
     }
+  }
+
+  // Per-store breakdown: a store with no categories cannot import or add cards.
+  const perStore = await client.query(`
+    select s.id, s.name,
+           (select count(*)::int from "Category" c where c."storeId" = s.id) as categories,
+           (select count(*)::int from "Card"     c where c."storeId" = s.id) as cards,
+           (select count(*)::int from "User"     u where u."storeId" = s.id) as users
+      from "Store" s order by s."createdAt"`);
+  console.log("\nper store:");
+  for (const r of perStore.rows) {
+    console.log(`  ${r.name.padEnd(18)} categories=${r.categories}  cards=${r.cards}  users=${r.users}`);
   }
 
   const pending = await client.query(

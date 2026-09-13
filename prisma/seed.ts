@@ -1,34 +1,9 @@
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
-import { NBA_FIELDS, FOOTBALL_FIELDS, type ThemeTokens } from "../src/lib/fieldSchema";
+import { BUILT_IN_CATEGORIES } from "../src/lib/defaultCategories";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
 const prisma = new PrismaClient({ adapter });
-
-// accent is used as a solid fill behind white text (buttons, active tabs,
-// badges) throughout the app, so it must itself clear WCAG AA (4.5:1) against
-// white — the original bright brand tones (#F97316, #16A34A) only hit
-// 2.80:1/3.30:1. Kept as accentLight for tints/icons where full contrast
-// isn't load-bearing; accent/accentDark are now the two darker, AA-safe steps.
-const NBA_THEME: ThemeTokens = {
-  accent: "#C2410C", // 5.18:1 vs white
-  accentDark: "#9A3412",
-  secondary: "#18181B",
-  surface: "#FFF7ED",
-  motif: "hardwood",
-  headerFont: "oswald",
-  iconSet: "basketball",
-};
-
-const FOOTBALL_THEME: ThemeTokens = {
-  accent: "#15803D", // 5.02:1 vs white
-  accentDark: "#166534",
-  secondary: "#FFFFFF",
-  surface: "#F0FDF4",
-  motif: "pitch",
-  headerFont: "barlowCondensed",
-  iconSet: "soccer",
-};
 
 /** The store the sample data belongs to. Seeding is per-store now. */
 const SEED_STORE_NAME = "Demo Store";
@@ -46,26 +21,8 @@ async function main() {
     create: { storeId, minMarginPct: 20 },
   });
 
-  const categories = [
-    {
-      key: "NBA",
-      displayName: "NBA",
-      icon: "basketball",
-      sortOrder: 1,
-      fieldSchema: NBA_FIELDS,
-      themeTokens: NBA_THEME,
-      isBuiltIn: true,
-    },
-    {
-      key: "Football",
-      displayName: "Football",
-      icon: "football",
-      sortOrder: 2,
-      fieldSchema: FOOTBALL_FIELDS,
-      themeTokens: FOOTBALL_THEME,
-      isBuiltIn: true,
-    },
-  ];
+  // Same definitions every new store gets at sign-up, so seed data cannot drift.
+  const categories = BUILT_IN_CATEGORIES;
 
   for (const category of categories) {
     await prisma.category.upsert({

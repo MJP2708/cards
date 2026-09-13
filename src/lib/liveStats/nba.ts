@@ -61,7 +61,7 @@ export async function fetchNbaStats(params: { playerName: string; year: number |
     if (player) break;
   }
   if (!player) {
-    return { ok: false, error: `No player found matching "${params.playerName}".` };
+    return { ok: false, error: `No player found matching "${params.playerName}".`, genuineMiss: true };
   }
 
   const season = params.year ?? new Date().getFullYear() - 1;
@@ -75,6 +75,7 @@ export async function fetchNbaStats(params: { playerName: string; year: number |
     return {
       ok: false,
       error: `No ${season} season stats found for ${params.playerName} (API-NBA's free tier only covers recent seasons).`,
+      genuineMiss: true,
     };
   }
 

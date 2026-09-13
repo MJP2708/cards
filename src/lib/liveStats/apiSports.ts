@@ -66,7 +66,54 @@ export async function apiSportsFetch(sport: ApiSport, path: string) {
   // `errors` is [] when clean, an object keyed by reason (token, requests, plan) when not.
   const errors = body?.errors;
   if (errors && !Array.isArray(errors) && Object.keys(errors).length > 0) {
-    throw new Error(`${label}: ${Object.values(errors).join(" ")}`);
+    throw classifyApiSportsError(label, errors as Record<string, string>);
   }
   return body;
+}
+
+/** Why a call failed. `plan` and `auth` can never succeed on a retry; the others can. */
+export type ApiSportsErrorKind = "plan" | "quota" | "auth" | "other";
+
+export class ApiSportsError extends Error {
+  constructor(
+    message: string,
+    readonly kind: ApiSportsErrorKind,
+    readonly retryable: boolean
+  ) {
+    super(message);
+    this.name = "ApiSportsError";
+  }
+}
+
+/**
+ * Turns API-Sports' raw `errors` object into something a user can act on.
+ *
+ * The upstream text ("Free plans do not have access to this season.") reads like a
+ * bug report rather than a plan limit, and every failure used to be marked
+ * retryable — so a season the free tier will never serve was re-requested on every
+ * pass, spending quota that could have gone to cards that *are* covered.
+ */
+export function classifyApiSportsError(label: string, errors: Record<string, string>): ApiSportsError {
+  const text = Object.values(errors).join(" ").trim();
+  const keys = Object.keys(errors).map((key) => key.toLowerCase());
+  const lower = text.toLowerCase();
+
+  if (keys.includes("plan") || lower.includes("free plan") || lower.includes("do not have access")) {
+    return new ApiSportsError(
+      `${label}: paid plan only — the free tier doesn't cover this data. Everything else still imports.`,
+      "plan",
+      false
+    );
+  }
+  if (keys.includes("requests") || lower.includes("rate limit") || lower.includes("too many")) {
+    return new ApiSportsError(
+      `${label}: request limit reached — this card will be retried automatically.`,
+      "quota",
+      true
+    );
+  }
+  if (keys.includes("token") || lower.includes("token")) {
+    return new ApiSportsError(`${label}: API key was rejected. Check ${API_SPORTS_ENV_VAR}.`, "auth", false);
+  }
+  return new ApiSportsError(`${label}: ${text || "request failed"}`, "other", true);
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { redirect } from "next/navigation";
 import { auth, type Role } from "@/auth";
 import { storeDb, type StoreDb } from "@/lib/db/scoped";
 
@@ -67,4 +68,19 @@ export async function requireOwner(): Promise<
     };
   }
   return result;
+}
+
+/**
+ * Page-level equivalent of `requireOwner`, for server components and layouts.
+ *
+ * A client-component page cannot gate itself, so owner-only sections put this in
+ * a `layout.tsx`. Without it those pages rendered fine for a MEMBER and then 403'd
+ * on every action — a dead end that looks like a broken feature rather than a
+ * permission boundary.
+ */
+export async function requireOwnerPage(): Promise<SessionUser> {
+  const user = await getSessionUser();
+  if (!user) redirect("/login");
+  if (user.role !== "OWNER") redirect("/all");
+  return user;
 }

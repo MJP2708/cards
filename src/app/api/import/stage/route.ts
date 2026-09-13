@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { parseWorksheet } from "@/lib/import/worksheet";
 import { stageRows } from "@/lib/import/stage";
+import { ensureDefaultCategories } from "@/lib/defaultCategories";
 import { enrichmentAvailability } from "@/lib/import/enrich";
 import { requireOwner } from "@/lib/auth/guards";
 
@@ -30,6 +31,8 @@ export async function POST(request: Request) {
 
   try {
     const parsed = await parseWorksheet({ name: file.name, buffer: await file.arrayBuffer() });
+    // A store with no categories rejects every row; make sure it has its own.
+    await ensureDefaultCategories(gate.db, gate.user.storeId);
     const staged = await stageRows(gate.db, parsed.rows, {
       unmappedHeaders: parsed.unmappedHeaders,
       sheetName: parsed.sheetName,

@@ -18,5 +18,6 @@
   "mobileNavLabel": "เมนูหลัก",
   "import": "นำเข้าไฟล์",
   "users": "ผู้ใช้งาน",
-  "diagnostics": "สถานะระบบ"
+  "diagnostics": "สถานะระบบ",
+  "signOut": "ออกจากระบบ"
 }

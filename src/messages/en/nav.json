@@ -18,5 +18,6 @@
   "mobileNavLabel": "Main navigation",
   "import": "Import",
   "users": "Users",
-  "diagnostics": "Status"
+  "diagnostics": "Status",
+  "signOut": "Sign out"
 }

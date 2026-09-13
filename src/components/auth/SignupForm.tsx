@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { InlineError } from "@/components/ui/InlineError";
 import { signupSchema } from "@/lib/validation/signup";
 
@@ -15,6 +16,7 @@ const EMPTY = { name: "", storeName: "", email: "", password: "", confirmPasswor
 const INPUT_CLASS = "w-full rounded-md border border-border-1 bg-transparent px-3 py-2";
 
 export function SignupForm() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const [form, setForm] = useState(EMPTY);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -65,7 +67,7 @@ export function SignupForm() {
         );
         return;
       }
-      setFormError(typeof body?.error === "string" ? body.error : "Could not create the account.");
+      setFormError(typeof body?.error === "string" ? body.error : t("createFailed"));
       return;
     }
 
@@ -78,7 +80,7 @@ export function SignupForm() {
     setBusy(false);
 
     if (signedIn?.error) {
-      setFormError("Account created, but sign-in failed. Try signing in.");
+      setFormError(t("signedUpButSignInFailed"));
       return;
     }
     router.push("/all");
@@ -88,29 +90,29 @@ export function SignupForm() {
   return (
     <form onSubmit={handleSubmit} noValidate className="w-full max-w-sm space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Create your store</h1>
+        <h1 className="text-2xl font-semibold">{t("createStoreTitle")}</h1>
         <p className="mt-1 text-sm text-foreground/60">
-          This sets up the owner account. You can add staff afterwards.
+          {t("createStoreSubtitle")}
         </p>
       </div>
 
       <Field
-        label="Full name"
+        label={t("fullName")}
         value={form.name}
         error={fieldErrors.name}
         autoComplete="name"
         onChange={(value) => update("name", value)}
       />
       <Field
-        label="Store name"
+        label={t("storeName")}
         value={form.storeName}
         error={fieldErrors.storeName}
         autoComplete="organization"
-        hint="Shown in the app header and on your sales reports."
+        hint={t("storeNameHint")}
         onChange={(value) => update("storeName", value)}
       />
       <Field
-        label="Email"
+        label={t("email")}
         type="email"
         value={form.email}
         error={fieldErrors.email}
@@ -118,16 +120,16 @@ export function SignupForm() {
         onChange={(value) => update("email", value)}
       />
       <Field
-        label="Password"
+        label={t("password")}
         type="password"
         value={form.password}
         error={fieldErrors.password}
         autoComplete="new-password"
-        hint="At least 8 characters, with an uppercase letter, a lowercase letter and a number."
+        hint={t("passwordHint")}
         onChange={(value) => update("password", value)}
       />
       <Field
-        label="Confirm password"
+        label={t("confirmPassword")}
         type="password"
         value={form.confirmPassword}
         error={fieldErrors.confirmPassword}
@@ -142,13 +144,13 @@ export function SignupForm() {
         disabled={busy}
         className="w-full rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
       >
-        {busy ? "Creating account…" : "Create account"}
+        {busy ? t("creatingAccount") : t("createAccount")}
       </button>
 
       <p className="text-center text-sm text-foreground/60">
-        Already have an account?{" "}
+        {t("haveAccount")}{" "}
         <Link href="/login" className="font-medium text-accent hover:underline">
-          Sign in
+          {t("signIn")}
         </Link>
       </p>
     </form>

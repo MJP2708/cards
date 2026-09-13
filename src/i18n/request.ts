@@ -16,6 +16,7 @@ const NAMESPACES = [
   "scan",
   "onboarding",
   "import",
+  "auth",
 ] as const;
 
 async function loadMessages(locale: Locale) {

@@ -10,6 +10,7 @@
  */
 import { prisma } from "../src/lib/prisma";
 import { hashPassword, MIN_PASSWORD_LENGTH } from "../src/lib/auth/password";
+import { buildDefaultCategoryRows } from "../src/lib/defaultCategories";
 
 async function main() {
   const [email, name, password, storeNameArg] = process.argv.slice(2);
@@ -33,9 +34,14 @@ async function main() {
 
   // Keep an existing account in its current store — a password reset must never
   // silently move someone's inventory to a brand new, empty store.
-  const storeId =
-    existing?.storeId ??
-    (await prisma.store.create({ data: { name: storeNameArg?.trim() || `${name}'s Store` } })).id;
+  let storeId = existing?.storeId;
+  if (!storeId) {
+    const store = await prisma.store.create({
+      data: { name: storeNameArg?.trim() || `${name}'s Store` },
+    });
+    await prisma.category.createMany({ data: buildDefaultCategoryRows(store.id) });
+    storeId = store.id;
+  }
 
   const user = await prisma.user.upsert({
     where: { email: normalized },

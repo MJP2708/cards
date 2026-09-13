@@ -1,4 +1,5 @@
 import type { LiveStatsResult } from "./types";
+import { ApiSportsError } from "./apiSports";
 import { fetchNbaStats } from "./nba";
 import { fetchFootballStats } from "./football";
 
@@ -25,6 +26,12 @@ export async function fetchLiveStats(card: {
       return await fetchFootballStats({ playerName: card.name, team, year: card.year });
     }
   } catch (error) {
+    // A plan limit or a rejected key will fail identically forever, so it must not
+    // be marked retryable — otherwise every enrichment pass spends quota re-asking
+    // a question the free tier has already refused.
+    if (error instanceof ApiSportsError) {
+      return { ok: false, error: error.message, retryable: error.retryable };
+    }
     return { ok: false, error: error instanceof Error ? error.message : "Live stats lookup failed.", retryable: true };
   }
   return { ok: false, error: `Live stats aren't available for the "${card.category}" category.` };

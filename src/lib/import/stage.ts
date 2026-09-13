@@ -82,9 +82,15 @@ export async function stageRows(
         rowNumber: raw.rowNumber,
         status: "failed",
         issues: [
-          categoryInput
-            ? `Unknown category "${categoryInput}". Known: ${categories.map((c) => c.key).join(", ")}.`
-            : "Missing Category.",
+          !categoryInput
+            ? "Missing Category."
+            : categories.length === 0
+              // "Known: ." told the user nothing. An empty list is a different
+              // problem from a misspelt name, and has a different fix.
+              ? `This store has no categories yet, so "${categoryInput}" can't be matched. Add one in Settings, then import again.`
+              : `Unknown category "${categoryInput}". This store knows: ${categories
+                  .map((c) => c.key)
+                  .join(", ")}.`,
         ],
         card: null,
         duplicateOf: null,

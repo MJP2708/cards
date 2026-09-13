@@ -19,6 +19,7 @@ function emptyField(): DraftField {
 export default function SettingsPage() {
   const t = useTranslations("settings");
   const common = useTranslations("common");
+  const auth = useTranslations("auth");
   const { data: categories } = useCategories();
 
   const HEADER_FONT_LABELS: Record<ThemeTokens["headerFont"], string> = {
@@ -112,9 +113,9 @@ export default function SettingsPage() {
       <h1 className="font-display text-xl font-semibold">{t("title")}</h1>
 
       <section className="space-y-3 rounded-lg border border-border-1 p-4">
-        <h2 className="text-sm font-semibold text-foreground/70">Store</h2>
+        <h2 className="text-sm font-semibold text-foreground/70">{auth("store")}</h2>
         <label className="flex flex-col gap-1 text-sm">
-          Store name
+          {auth("storeName")}
           <input
             type="text"
             value={storeName}
@@ -125,7 +126,7 @@ export default function SettingsPage() {
             className="w-full max-w-sm rounded-md border border-border-1 px-2 py-1.5"
           />
           <span className="text-xs text-foreground/50">
-            Shown in the header, the browser tab and on sales report PDFs.
+            {auth("storeNameSettingHint")}
           </span>
         </label>
         <button

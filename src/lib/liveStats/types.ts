@@ -11,8 +11,13 @@ export type LiveStatsSnapshot = {
 export type LiveStatsResult =
   | { ok: true; stats: LiveStatsSnapshot }
   /**
-   * `retryable` separates "this player genuinely isn't in the provider's data" from
-   * "the provider was rate-limited / down / misconfigured just now". Only the former
-   * may be cached as a miss — caching a transient failure poisons the result for days.
+   * Two independent questions, previously conflated into one flag:
+   *
+   * `retryable` — is it worth asking again later? False for a plan limit or a
+   *   rejected key, which will fail identically forever.
+   * `genuineMiss` — did the provider actually answer "no such player"? Only these
+   *   may be cached as a miss. A missing team on the card, a plan limit or an
+   *   outage must never be, or the card stays "no match" for the cache's whole TTL
+   *   even after the underlying problem is fixed.
    */
-  | { ok: false; error: string; retryable?: boolean };
+  | { ok: false; error: string; retryable?: boolean; genuineMiss?: boolean };

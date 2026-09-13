@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCategories } from "@/lib/categories";
+import { ensureDefaultCategories } from "@/lib/defaultCategories";
 import { fieldSchemaSchema, themeTokensSchema } from "@/lib/fieldSchema";
 import { z } from "zod";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
@@ -10,6 +11,9 @@ export async function GET() {
   // gate at all and returned the install's whole category list to anyone.
   const gate = await requireStore();
   if ("response" in gate) return gate.response;
+  // Repairs stores created before built-in categories were seeded at sign-up.
+  // No-op once a store has any category of its own.
+  await ensureDefaultCategories(gate.db, gate.user.storeId);
   const categories = await getCategories(gate.db);
   return NextResponse.json(categories);
 }

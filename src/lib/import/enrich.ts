@@ -18,6 +18,18 @@ export const ENRICH_CHUNK_SIZE = 5;
 /** A cached lookup older than this is re-fetched; younger is reused, quota-free. */
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * How long a claim stays valid before another worker may take the row back.
+ *
+ * The commit route starts the first chunk inside `after()`, which the platform can
+ * cut off mid-flight; the rows it had already claimed then sit in "processing"
+ * forever. Since `remaining` counts "processing" too, the batch never reports
+ * complete and the client polls a batch that can never finish. Comfortably longer
+ * than a real chunk of `ENRICH_CHUNK_SIZE` rate-limited lookups, so a live worker
+ * is never undercut.
+ */
+const CLAIM_TIMEOUT_MS = 3 * 60 * 1000;
+
 const CATEGORY_TO_SPORT: Record<string, ApiSport> = { NBA: "nba", Football: "football" };
 
 function cacheKey(category: string, name: string, series: string) {
@@ -43,6 +55,17 @@ export async function enrichNextChunk(
 ): Promise<ChunkResult> {
   const batch = await db.importBatch.findUnique({ where: { id: batchId } });
   if (!batch) throw new Error("Import batch not found");
+
+  // Take back rows whose worker never finished. Without this a single cut-off
+  // chunk strands the batch at "enriching" permanently.
+  await db.card.updateMany({
+    where: {
+      importBatchId: batchId,
+      enrichmentStatus: "processing",
+      updatedAt: { lt: new Date(Date.now() - CLAIM_TIMEOUT_MS) },
+    },
+    data: { enrichmentStatus: "pending" },
+  });
 
   // Claim rows before working them. The commit route kicks off the first chunk via
   // after() while the client's poller also calls in, and without a claim both would
@@ -138,9 +161,10 @@ export async function enrichNextChunk(
           where: { id: card.id },
           data: { enrichmentStatus: "failed", needsReview: true, reviewReason: result.error },
         });
-        // Only remember genuine misses. A rate-limited or unreachable provider must
-        // not be cached as "no such player", or a retry days later still says so.
-        if (!result.retryable) {
+        // Only remember genuine misses. A rate-limited provider, a plan limit, or a
+        // card that is simply missing its team must not be cached as "no such
+        // player", or fixing the real problem changes nothing until the TTL expires.
+        if (result.genuineMiss) {
           await db.enrichmentCache.upsert({
             where: { key },
             create: { key, provider: sport, payload: Prisma.DbNull, hit: false },

@@ -20,7 +20,7 @@ export async function fetchFootballStats(params: {
   const teamSearch = await apiFootballFetch(`/teams?search=${encodeURIComponent(params.team)}`);
   const teamId = teamSearch.response?.[0]?.team?.id;
   if (!teamId) {
-    return { ok: false, error: `No team found matching "${params.team}".` };
+    return { ok: false, error: `No team found matching "${params.team}".`, genuineMiss: true };
   }
 
   const season = params.year ?? 2023;
@@ -32,6 +32,7 @@ export async function fetchFootballStats(params: {
     return {
       ok: false,
       error: `No ${season} season stats found for "${params.playerName}" at ${params.team} (API-Football's free tier only covers some seasons/leagues).`,
+      genuineMiss: true,
     };
   }
 

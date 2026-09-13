@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/auth/password";
 import { signupSchema } from "@/lib/validation/signup";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
+import { buildDefaultCategoryRows } from "@/lib/defaultCategories";
 
 /**
  * Open sign-up: anyone can create an account, and each one gets its own store.
@@ -31,6 +32,9 @@ export async function POST(request: Request) {
   try {
     const user = await prisma.$transaction(async (tx) => {
       const store = await tx.store.create({ data: { name: storeName } });
+      // Without these the store cannot add a card or import a worksheet at all —
+      // both match rows against the store's own category list.
+      await tx.category.createMany({ data: buildDefaultCategoryRows(store.id) });
       return tx.user.create({
         data: { email, name, passwordHash, role: "OWNER", storeId: store.id },
         select: { id: true, email: true, name: true, role: true, storeId: true },

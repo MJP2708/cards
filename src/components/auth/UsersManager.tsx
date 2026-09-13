@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { InlineError } from "@/components/ui/InlineError";
@@ -7,11 +9,12 @@ import { InlineError } from "@/components/ui/InlineError";
 type User = { id: string; email: string; name: string; role: string; createdAt: string };
 
 export function UsersManager({ initialUsers, currentUserId }: { initialUsers: User[]; currentUserId: string }) {
+  const t = useTranslations("auth");
   const router = useRouter();
   const [users, setUsers] = useState(initialUsers);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ email: "", name: "", password: "", role: "STAFF" });
+  const [form, setForm] = useState({ email: "", name: "", password: "", role: "MEMBER" });
   const [resetFor, setResetFor] = useState<string | null>(null);
   const [resetPassword, setResetPassword] = useState("");
 
@@ -41,7 +44,7 @@ export function UsersManager({ initialUsers, currentUserId }: { initialUsers: Us
     event.preventDefault();
     const created = await call("/api/users", { method: "POST", body: JSON.stringify(form) });
     if (created) {
-      setForm({ email: "", name: "", password: "", role: "STAFF" });
+      setForm({ email: "", name: "", password: "", role: "MEMBER" });
       await refresh();
     }
   }
@@ -96,7 +99,7 @@ export function UsersManager({ initialUsers, currentUserId }: { initialUsers: Us
                   type="text"
                   value={resetPassword}
                   onChange={(e) => setResetPassword(e.target.value)}
-                  placeholder="New password (min 8 chars)"
+                  placeholder={t("newPassword")}
                   className="flex-1 rounded-md border border-border-1 bg-transparent px-2 py-1 text-xs"
                 />
                 <button
@@ -116,17 +119,17 @@ export function UsersManager({ initialUsers, currentUserId }: { initialUsers: Us
         <h2 className="text-sm font-semibold">Add a staff account</h2>
         <div className="grid gap-3 sm:grid-cols-2">
           <input
-            type="text" required placeholder="Name" value={form.name}
+            type="text" required placeholder={t("name")} value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="rounded-md border border-border-1 bg-transparent px-3 py-2 text-sm"
           />
           <input
-            type="email" required placeholder="Email" value={form.email}
+            type="email" required placeholder={t("email")} value={form.email}
             onChange={(e) => setForm({ ...form, email: e.target.value })}
             className="rounded-md border border-border-1 bg-transparent px-3 py-2 text-sm"
           />
           <input
-            type="text" required minLength={8} placeholder="Password (min 8 chars)" value={form.password}
+            type="text" required minLength={8} placeholder={t("passwordMin")} value={form.password}
             onChange={(e) => setForm({ ...form, password: e.target.value })}
             className="rounded-md border border-border-1 bg-transparent px-3 py-2 text-sm"
           />
@@ -135,8 +138,8 @@ export function UsersManager({ initialUsers, currentUserId }: { initialUsers: Us
             onChange={(e) => setForm({ ...form, role: e.target.value })}
             className="rounded-md border border-border-1 bg-transparent px-3 py-2 text-sm"
           >
-            <option value="STAFF">Staff</option>
-            <option value="ADMIN">Admin</option>
+            <option value="MEMBER">{t("roleMember")}</option>
+            <option value="OWNER">{t("roleOwner")}</option>
           </select>
         </div>
         <button
