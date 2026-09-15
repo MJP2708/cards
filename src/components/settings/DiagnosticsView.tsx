@@ -7,7 +7,7 @@ type Integration = {
   key: string;
   label: string;
   envVars: string[];
-  state: "ok" | "down" | "unconfigured";
+  state: "ok" | "pending" | "down" | "unconfigured";
   detail: string;
   powers: string;
   ms: number | null;
@@ -15,12 +15,16 @@ type Integration = {
 
 const STATE_STYLES: Record<Integration["state"], string> = {
   ok: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400",
+  // Blue, not red: nothing here is broken and nothing needs fixing, so this must
+  // not read as an alarm at a glance.
+  pending: "bg-sky-500/10 text-sky-700 dark:text-sky-400",
   down: "bg-red-500/10 text-red-700 dark:text-red-400",
   unconfigured: "bg-amber-500/10 text-amber-700 dark:text-amber-500",
 };
 
 const STATE_LABELS: Record<Integration["state"], string> = {
   ok: "Working",
+  pending: "Unavailable — pending account approval",
   down: "Unavailable",
   unconfigured: "Not configured",
 };
@@ -82,10 +86,27 @@ export function DiagnosticsView({ initial, checkedAt }: { initial: Integration[]
         ))}
       </ul>
 
-      <p className="mt-4 text-xs text-foreground/50">
-        &quot;Not configured&quot; means no key is set — that feature is simply off, and nothing else
-        is affected. &quot;Unavailable&quot; means a key is set but the service rejected or failed
-        the call; the app degrades to manual entry for that feature rather than erroring.
+      <ul className="mt-4 space-y-1 text-xs text-foreground/50">
+        <li>
+          <strong className="font-medium text-foreground/70">Not configured</strong> — no key is set,
+          so that feature is simply off. Nothing else is affected.
+        </li>
+        <li>
+          <strong className="font-medium text-foreground/70">
+            Unavailable — pending account approval
+          </strong>{" "}
+          — the keys are set and the provider has them, but it is not serving this app yet because
+          the developer account or keyset is still awaiting their approval. There is nothing to fix
+          on this end; the feature switches itself on once approval lands.
+        </li>
+        <li>
+          <strong className="font-medium text-foreground/70">Unavailable</strong> — a key is set but
+          the service rejected or failed the call. This one is worth investigating.
+        </li>
+      </ul>
+      <p className="mt-2 text-xs text-foreground/50">
+        In every non-working case the app degrades to manual entry for that feature rather than
+        erroring.
       </p>
     </div>
   );

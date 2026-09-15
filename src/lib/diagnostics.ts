@@ -1,24 +1,36 @@
 import type { StoreDb } from "@/lib/db/scoped";
 import { API_SPORTS, apiSportsKey, API_SPORTS_ENV_VAR } from "@/lib/liveStats/apiSports";
-import { clearEbayAuthFailure, hasEbayCredentials, searchEbayComps } from "@/lib/comps/ebay";
+import { clearEbayAuthFailure, EbayAuthError, hasEbayCredentials, searchEbayComps } from "@/lib/comps/ebay";
 
 export type IntegrationStatus = {
   key: string;
   label: string;
   envVars: string[];
-  /** "ok" | "down" | "unconfigured" — unconfigured means no key, which is not a failure. */
-  state: "ok" | "down" | "unconfigured";
+  /**
+   * "ok"           working
+   * "pending"      configured and correct as far as we can tell, but the provider
+   *                is not serving us yet — waiting on their approval, not a bug here
+   * "down"         configured, but the call failed
+   * "unconfigured" no key set, so the feature is simply off
+   */
+  state: "ok" | "pending" | "down" | "unconfigured";
   detail: string;
   powers: string;
   ms: number | null;
 };
 
-async function timed<T>(fn: () => Promise<T>): Promise<{ value?: T; error?: string; ms: number }> {
+async function timed<T>(
+  fn: () => Promise<T>
+): Promise<{ value?: T; error?: string; cause?: unknown; ms: number }> {
   const started = Date.now();
   try {
     return { value: await fn(), ms: Date.now() - started };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : String(error), ms: Date.now() - started };
+    return {
+      error: error instanceof Error ? error.message : String(error),
+      cause: error,
+      ms: Date.now() - started,
+    };
   }
 }
 
@@ -80,7 +92,13 @@ async function checkEbay(force: boolean): Promise<IntegrationStatus> {
   if (force) clearEbayAuthFailure();
 
   const result = await timed(() => searchEbayComps("2023 Panini Prizm", 1));
-  if (result.error) return { ...base, state: "down", detail: result.error, ms: result.ms };
+  if (result.error) {
+    // Distinguish "eBay has not approved this application yet" from "eBay is
+    // broken". Both leave comps unavailable, but only one of them is a bug, and
+    // reading the wrong one off this screen costs an afternoon of debugging.
+    const pending = result.cause instanceof EbayAuthError && result.cause.kind === "pending_approval";
+    return { ...base, state: pending ? "pending" : "down", detail: result.error, ms: result.ms };
+  }
   return { ...base, state: "ok", detail: "Authenticated and returning listings", ms: result.ms };
 }
 

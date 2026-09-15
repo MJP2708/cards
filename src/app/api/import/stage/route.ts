@@ -1,52 +1,38 @@
 import { NextResponse } from "next/server";
-import { parseWorksheet } from "@/lib/import/worksheet";
+import { z } from "zod";
+import { readJsonBody, invalidJsonResponse } from "@/lib/api";
+import { getCategories } from "@/lib/categories";
 import { stageRows } from "@/lib/import/stage";
-import { ensureDefaultCategories } from "@/lib/defaultCategories";
-import { enrichmentAvailability } from "@/lib/import/enrich";
 import { requireOwner } from "@/lib/auth/guards";
 
-const MAX_BYTES = 5 * 1024 * 1024;
+const bodySchema = z.object({
+  headers: z.array(z.string()),
+  rows: z.array(z.object({ rowNumber: z.number().int(), cells: z.array(z.string()) })).min(1),
+  /** appFieldKey -> worksheet header. null means the user chose "Not mapped". */
+  fieldMap: z.record(z.string(), z.string().nullable()),
+  /** lowercased raw category value -> this store's category key. */
+  categoryMap: z.record(z.string(), z.string()),
+});
 
-/** Parses and validates an uploaded worksheet. Writes nothing — this drives the preview. */
+/**
+ * Step 3: interpret the rows through the confirmed mapping and say, per row,
+ * what committing would do to this store's inventory.
+ *
+ * Writes nothing — this is the preview the staging screen renders, and it can be
+ * re-run as many times as the user wants while they adjust their choices.
+ */
 export async function POST(request: Request) {
   const gate = await requireOwner();
   if ("response" in gate) return gate.response;
-  let formData: FormData;
-  try {
-    formData = await request.formData();
-  } catch {
-    return NextResponse.json({ error: "Expected a multipart file upload." }, { status: 400 });
+
+  const json = await readJsonBody(request);
+  if (!json.ok) return invalidJsonResponse();
+  const parsed = bodySchema.safeParse(json.data);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const file = formData.get("file");
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "No file provided." }, { status: 400 });
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "File is larger than 5MB." }, { status: 400 });
-  }
-  if (!/\.(xlsx|xls|csv)$/i.test(file.name)) {
-    return NextResponse.json({ error: "Upload a .xlsx or .csv file." }, { status: 400 });
-  }
-
-  try {
-    const parsed = await parseWorksheet({ name: file.name, buffer: await file.arrayBuffer() });
-    // A store with no categories rejects every row; make sure it has its own.
-    await ensureDefaultCategories(gate.db, gate.user.storeId);
-    const staged = await stageRows(gate.db, parsed.rows, {
-      unmappedHeaders: parsed.unmappedHeaders,
-      sheetName: parsed.sheetName,
-    });
-    return NextResponse.json({
-      fileName: file.name,
-      ...staged,
-      // Surfaced up-front so a missing key is obvious before committing, not after.
-      enrichment: enrichmentAvailability(),
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Could not read that file." },
-      { status: 400 }
-    );
-  }
+  const categories = await getCategories(gate.db);
+  const staged = await stageRows(gate.db, categories, parsed.data);
+  return NextResponse.json(staged);
 }

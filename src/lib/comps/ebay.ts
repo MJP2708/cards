@@ -31,11 +31,31 @@ export function missingCredentialsError() {
 let cachedToken: { value: string; expiresAt: number } | null = null;
 
 /**
+ * Why a token request failed.
+ *
+ *  - `pending_approval` eBay accepted the request but will not issue a token for
+ *    this keyset. That is what an application still awaiting eBay's approval
+ *    looks like from the outside, and it is not a fault in this app — so the
+ *    diagnostics screen reports it as its own state rather than as an error.
+ *  - `error` anything else: a network failure, an outage, a 5xx.
+ */
+export type EbayFailureKind = "pending_approval" | "error";
+
+export class EbayAuthError extends Error {
+  readonly kind: EbayFailureKind;
+  constructor(message: string, kind: EbayFailureKind) {
+    super(message);
+    this.name = "EbayAuthError";
+    this.kind = kind;
+  }
+}
+
+/**
  * Negative cache. While eBay is rejecting our credentials there is no point paying a
  * round trip on every click — remember the failure briefly and fail fast instead.
  * Cleared as soon as a token succeeds, so restored access is picked up immediately.
  */
-let authFailure: { message: string; until: number } | null = null;
+let authFailure: { message: string; kind: EbayFailureKind; until: number } | null = null;
 const AUTH_FAILURE_TTL_MS = 5 * 60 * 1000;
 
 export function ebayAuthFailure(): string | null {
@@ -52,7 +72,7 @@ async function getAccessToken(): Promise<string> {
   if (cachedToken && Date.now() < cachedToken.expiresAt) return cachedToken.value;
 
   const known = ebayAuthFailure();
-  if (known) throw new Error(known);
+  if (known) throw new EbayAuthError(known, authFailure?.kind ?? "error");
 
   const credentials = Buffer.from(`${process.env.EBAY_CLIENT_ID}:${process.env.EBAY_CLIENT_SECRET}`).toString("base64");
   const res = await fetch(`${hosts().auth}/identity/v1/oauth2/token`, {
@@ -69,12 +89,17 @@ async function getAccessToken(): Promise<string> {
 
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    const message =
-      res.status === 401
-        ? "eBay rejected the credentials (401). Production keysets stay disabled until eBay's Marketplace Account Deletion requirement is met or an exemption is granted."
-        : `eBay auth failed (${res.status}). ${detail.slice(0, 200)}`;
-    authFailure = { message, until: Date.now() + AUTH_FAILURE_TTL_MS };
-    throw new Error(message);
+    // 401 invalid_client is what eBay returns for a keyset it will not issue tokens
+    // for — the normal state of an application still waiting on approval. It is the
+    // same response as a genuinely mistyped credential, which eBay gives us no way
+    // to tell apart, so the message names both rather than asserting one.
+    const pending = res.status === 401;
+    const message = pending
+      ? "eBay is not issuing tokens for this keyset yet (401 invalid_client). This is the expected response while an application is awaiting eBay's approval. If approval has already come through, check that EBAY_CLIENT_ID (App ID) and EBAY_CLIENT_SECRET (Cert ID) are from the same keyset and match EBAY_ENV (production by default), and that eBay's Marketplace Account Deletion requirement is met or exempted."
+      : `eBay auth failed (${res.status}). ${detail.slice(0, 200)}`;
+    const kind: EbayFailureKind = pending ? "pending_approval" : "error";
+    authFailure = { message, kind, until: Date.now() + AUTH_FAILURE_TTL_MS };
+    throw new EbayAuthError(message, kind);
   }
 
   authFailure = null;
@@ -92,6 +117,10 @@ export type EbayComp = {
   currency: string;
   url: string | null;
   condition: string | null;
+  /** The listing's own photo. Useful as a reference image when the seller has
+   *  not photographed the card yet — but it is another seller's listing, so it
+   *  must never be presented as a picture of the card in hand. */
+  imageUrl: string | null;
 };
 
 /**
@@ -132,6 +161,8 @@ export async function searchEbayComps(query: string, limit = 10): Promise<EbayCo
       price?: { value?: string; currency?: string };
       itemWebUrl?: string;
       condition?: string;
+      image?: { imageUrl?: string };
+      thumbnailImages?: { imageUrl?: string }[];
     }[];
   };
 
@@ -145,6 +176,7 @@ export async function searchEbayComps(query: string, limit = 10): Promise<EbayCo
         currency: item.price?.currency ?? "USD",
         url: item.itemWebUrl ?? null,
         condition: item.condition ?? null,
+        imageUrl: item.image?.imageUrl ?? item.thumbnailImages?.[0]?.imageUrl ?? null,
       };
     })
     .filter((item): item is EbayComp => item !== null);

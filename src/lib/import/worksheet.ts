@@ -1,92 +1,58 @@
 import ExcelJS from "exceljs";
 import Papa from "papaparse";
+import { normalizeHeader } from "./fuzzy";
 
 /**
- * Header matching is deliberately loose: the worksheet says "Card Number" and
- * "Series/Set" while the existing CSV template emits camelCase `cardNumber`.
- * Normalising both to bare alphanumerics lets one mapping serve both.
+ * Reads a worksheet as-is.
+ *
+ * This deliberately does not interpret columns. Every seller brings their own
+ * sheet, so which column means what is a decision the user confirms on the
+ * mapping screen (`src/lib/import/mapping.ts`) — parsing only reports what is
+ * actually in the file. Keeping raw cells also means the mapping can be changed
+ * and re-previewed without re-uploading.
  */
-function normalizeHeader(header: string): string {
-  return header
-    .toLowerCase()
-    // Drop a trailing unit/currency note first — "Cost Basis (THB)" is still costBasis,
-    // and without this it normalises to "costbasisthb" and silently goes unmapped.
-    .replace(/\([^)]*\)/g, "")
-    .replace(/[^a-z0-9]/g, "");
-}
 
-/** Worksheet column -> Card field. Several spellings map to the same field. */
-const COLUMN_ALIASES: Record<string, string> = {
-  category: "category",
-  name: "name",
-  cardname: "name",
-  player: "name",
-  playername: "name",
-  teamgame: "team",
-  team: "team",
-  game: "team",
-  seriesset: "series",
-  series: "series",
-  set: "series",
-  year: "year",
-  cardnumber: "cardNumber",
-  number: "cardNumber",
-  no: "cardNumber",
-  cardtype: "cardType",
-  type: "cardType",
-  rarity: "rarity",
-  grade: "grade",
-  costbasis: "costBasis",
-  cost: "costBasis",
-  askingprice: "askingPrice",
-  asking: "askingPrice",
-  price: "askingPrice",
-  quantity: "quantity",
-  qty: "quantity",
-  status: "status",
-  qrcode: "qrCode",
-  buyernote: "buyerNote",
-  notes: "buyerNote",
+export type RawRow = {
+  /** 1-based row number in the source file, so errors point at the real row. */
+  rowNumber: number;
+  /** Cell text in column order, aligned with `headers`. */
+  cells: string[];
 };
 
-export type RawRow = { rowNumber: number; values: Record<string, string> };
-
 export type ParsedWorksheet = {
+  headers: string[];
   rows: RawRow[];
-  /** Headers present in the file that we had no mapping for — surfaced, not silently dropped. */
-  unmappedHeaders: string[];
   sheetName: string | null;
 };
 
-function mapHeaders(headers: string[]) {
-  const mapped: (string | null)[] = [];
-  const unmapped: string[] = [];
-  for (const header of headers) {
-    const key = COLUMN_ALIASES[normalizeHeader(header)] ?? null;
-    mapped.push(key);
-    if (!key && header.trim()) unmapped.push(header.trim());
-  }
-  return { mapped, unmapped };
+/** Blank and duplicate headers still need a stable, distinct name to map against. */
+function labelHeaders(raw: string[]): string[] {
+  const seen = new Map<string, number>();
+  return raw.map((header, index) => {
+    const trimmed = (header ?? "").trim();
+    const base = trimmed || `Column ${index + 1}`;
+    const key = normalizeHeader(base) || `col${index}`;
+    const count = seen.get(key) ?? 0;
+    seen.set(key, count + 1);
+    // "Price" twice becomes "Price" and "Price (2)" — the field map is keyed by
+    // header text, so two identical headers would otherwise be indistinguishable.
+    return count === 0 ? base : `${base} (${count + 1})`;
+  });
 }
 
 function buildRows(headers: string[], dataRows: string[][], firstDataRowNumber: number): ParsedWorksheet {
-  const { mapped, unmapped } = mapHeaders(headers);
+  const labelled = labelHeaders(headers);
   const rows: RawRow[] = [];
 
   dataRows.forEach((cells, index) => {
-    const values: Record<string, string> = {};
-    mapped.forEach((key, column) => {
-      if (!key) return;
-      const cell = (cells[column] ?? "").toString().trim();
-      if (cell) values[key] = cell;
-    });
+    const normalized = labelled.map((_, column) => (cells[column] ?? "").toString().trim());
     // Skip rows that are entirely blank rather than reporting them as failures.
-    if (Object.keys(values).length > 0) {
-      rows.push({ rowNumber: firstDataRowNumber + index, values });
+    if (normalized.some((cell) => cell !== "")) {
+      rows.push({ rowNumber: firstDataRowNumber + index, cells: normalized });
     }
   });
 
-  return { rows, unmappedHeaders: unmapped, sheetName: null };
+  return { headers: labelled, rows, sheetName: null };
 }
 
 async function parseXlsx(buffer: ArrayBuffer): Promise<ParsedWorksheet> {

@@ -14,6 +14,7 @@ const TENANT_MODELS = new Set([
   "PriceComp",
   "FilterPreset",
   "ImportBatch",
+  "ImportMapping",
   "Settings",
   "User",
 ]);

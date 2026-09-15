@@ -28,9 +28,11 @@ model Store {
   categories    Category[]
   sales         Sale[]
   bundles       Bundle[]
-  priceComps    PriceComp[]
-  filterPresets FilterPreset[]
+  priceComps     PriceComp[]
+  priceSnapshots PriceSnapshot[]
+  filterPresets  FilterPreset[]
   importBatches ImportBatch[]
+  importMappings ImportMapping[]
   settings      Settings?
 }
 
@@ -53,6 +55,11 @@ model Card {
   status      String    @default("In Stock") // In Stock, Sold, Reserved, On Hold
   photoFront  String?
   photoBack   String?
+  // True when photoFront was pulled from a marketplace listing rather than
+  // photographed in hand. A stock image is a reference for identification only —
+  // condition and centring are exactly what it cannot be trusted for — so the UI
+  // labels it, and nothing may overwrite a photo the seller took themselves.
+  photoIsStock Boolean  @default(false)
   // Unique per store, not globally: two stores printing their own labels must be
   // able to use the same short code without colliding.
   qrCode      String?
@@ -77,8 +84,9 @@ model Card {
   needsReview      Boolean      @default(false)
   reviewReason     String?
 
-  sales      Sale[]
-  priceComps PriceComp[]
+  sales          Sale[]
+  priceComps     PriceComp[]
+  priceSnapshots PriceSnapshot[]
 
   @@unique([storeId, qrCode])
   @@index([storeId, category, status])
@@ -152,6 +160,30 @@ model PriceComp {
   @@index([storeId])
 }
 
+/// One aggregated reading of what a card was selling for, captured per comp
+/// refresh and never rewritten.
+///
+/// `PriceComp` holds the *current* listings and is wiped and refilled on every
+/// refresh, so it can never express change over time — the old "Price History"
+/// chart was really plotting ten concurrent listings in insertion order. This
+/// table stores one row per refresh instead, so a trend line means something.
+model PriceSnapshot {
+  id          String   @id @default(cuid())
+  storeId     String
+  store       Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  cardId      String
+  card        Card     @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  source      String // "eBay (auto)", or a manual source
+  medianPrice Float
+  minPrice    Float
+  maxPrice    Float
+  sampleSize  Int
+  capturedAt  DateTime @default(now())
+
+  @@index([cardId, capturedAt])
+  @@index([storeId])
+}
+
 model FilterPreset {
   id         String  @id @default(cuid())
   storeId    String
@@ -185,6 +217,11 @@ model ImportBatch {
   createdAt     DateTime @default(now())
   rowCount      Int
   importedCount Int      @default(0)
+  /// Rows that matched an existing card and changed its quantity/price rather
+  /// than creating a new one. Split out from importedCount so the history log can
+  /// answer "did this import add stock, or just re-price it?".
+  updatedCount  Int      @default(0)
+  skippedCount  Int      @default(0)
   enrichedCount Int      @default(0)
   reviewCount   Int      @default(0)
   failedCount   Int      @default(0)
@@ -194,6 +231,30 @@ model ImportBatch {
   cards Card[]
 
   @@index([storeId, createdAt])
+}
+
+/// A saved column mapping for one seller's spreadsheet layout.
+///
+/// Every store's sheet has its own header names and order, so the importer maps
+/// them per upload. Saving that decision means the second upload from the same
+/// source arrives pre-mapped — matched on `headerSignature`, the sheet's sorted
+/// normalised headers, which is stable against column reordering but changes if
+/// the source genuinely adds or renames a column.
+model ImportMapping {
+  id              String   @id @default(cuid())
+  storeId         String
+  store           Store    @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  name            String
+  headerSignature String
+  /// { appFieldKey: worksheetHeader } — absent key means "not mapped".
+  fieldMap        Json
+  /// { rawCategoryValueLowercased: categoryKey }
+  categoryMap     Json
+  createdAt       DateTime @default(now())
+  lastUsedAt      DateTime @default(now())
+
+  @@unique([storeId, name])
+  @@index([storeId, lastUsedAt])
 }
 
 /// Enrichment lookups keyed by category+name+series so a re-import of similar cards
