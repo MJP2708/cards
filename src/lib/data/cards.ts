@@ -17,6 +17,7 @@ function buildQuery(filters: CardFilters): string {
   if (filters.isHot !== undefined) params.set("isHot", String(filters.isHot));
   if (filters.minPrice !== undefined) params.set("minPrice", String(filters.minPrice));
   if (filters.maxPrice !== undefined) params.set("maxPrice", String(filters.maxPrice));
+  if (filters.verification) params.set("verification", filters.verification);
   return params.toString();
 }
 
@@ -44,6 +45,13 @@ function filterCardsOffline(cards: CardDTO[], filters: CardFilters): CardDTO[] {
   if (filters.isHot !== undefined) result = result.filter((c) => c.isHot === filters.isHot);
   if (filters.minPrice !== undefined) result = result.filter((c) => c.askingPrice >= filters.minPrice!);
   if (filters.maxPrice !== undefined) result = result.filter((c) => c.askingPrice <= filters.maxPrice!);
+  if (filters.verification) {
+    result = result.filter((c) =>
+      filters.verification === "flagged"
+        ? c.verificationStatus === "NEEDS_REVIEW" || c.verificationStatus === "LIKELY_INCORRECT"
+        : c.verificationStatus === filters.verification
+    );
+  }
   if (filters.q) {
     const q = filters.q.toLowerCase();
     result = result.filter(
@@ -124,6 +132,12 @@ export function useCreateCard() {
           researchNotes: null,
           liveStats: null,
           liveStatsFetchedAt: null,
+          // Genuinely unchecked: the server has not seen this card yet, so it shows
+          // as "not yet verified" rather than borrowing a verdict it never earned.
+          // The replay through /api/cards on reconnect is what triggers the audit.
+          verificationStatus: null,
+          verificationNotes: null,
+          verifiedAt: null,
           dateAdded: now,
           dateSold: null,
           soldPrice: null,
@@ -262,6 +276,37 @@ export function useImportCards() {
   return useMutation({
     mutationFn: (input: { category: string; rows: Partial<CardInput>[] }) =>
       fetchJson<{ count: number }>("/api/cards/import", { method: "POST", body: JSON.stringify(input) }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["cards"] }),
+  });
+}
+
+/**
+ * Manual "Re-verify" for one card.
+ *
+ * Invalidates both the card and the list so a changed verdict shows up in the
+ * inventory badge immediately, not just on the detail screen.
+ */
+export function useVerifyCard() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      fetchJson<{ status: string; notes: string }>(`/api/cards/${id}/verify`, { method: "POST" }),
+    onSuccess: (_data, id) => {
+      qc.invalidateQueries({ queryKey: ["card", id] });
+      qc.invalidateQueries({ queryKey: ["cards"] });
+    },
+  });
+}
+
+/** Bulk "Re-verify all" — useful once a comp source comes online. */
+export function useVerifyAll() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: { category?: string } = {}) =>
+      fetchJson<{ checked: number; verified: number; flagged: number; remaining: number }>(
+        "/api/cards/verify",
+        { method: "POST", body: JSON.stringify(input) }
+      ),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["cards"] }),
   });
 }

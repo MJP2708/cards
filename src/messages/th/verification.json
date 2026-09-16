@@ -1,0 +1,22 @@
+{
+  "panelTitle": "ตรวจสอบข้อมูล",
+  "verifiedLabel": "ตรวจแล้ว",
+  "needsReviewLabel": "ต้องตรวจสอบ",
+  "likelyIncorrectLabel": "น่าจะไม่ถูกต้อง",
+  "notCheckedLabel": "ยังไม่ได้ตรวจ",
+  "notCheckedHelp": "การ์ดใบนี้ยังไม่ผ่านการตรวจสอบข้อมูล กดตรวจสอบอีกครั้งเพื่อเริ่มตรวจ",
+  "checkedAgo": "ตรวจเมื่อ {time}",
+  "noNotes": "ไม่มีหมายเหตุจากการตรวจครั้งนี้",
+  "neverAutoCorrects": "ระบบไม่ได้แก้ไขข้อมูลใด ๆ ให้คุณ — นี่เป็นเพียงการแจ้งเตือน หากคุณเห็นด้วยกรุณาแก้ไขการ์ดเอง",
+  "reverify": "ตรวจสอบอีกครั้ง",
+  "reverifying": "กำลังตรวจ…",
+  "reverifyFailed": "ไม่สามารถตรวจสอบการ์ดใบนี้ได้",
+  "reverifyAll": "ตรวจสอบทั้งหมด",
+  "reverifyAllHelp": "ตรวจสอบข้อมูลใหม่ทั้งคลัง มีประโยชน์เมื่อมีราคาเปรียบเทียบหรือสถิติผู้เล่นใหม่เข้ามา",
+  "reverifyAllResult": "ตรวจแล้ว {checked} ใบ — ผ่าน {verified} ใบ ต้องตรวจสอบ {flagged} ใบ",
+  "filterLabel": "ผลการตรวจข้อมูล",
+  "filterFlagged": "ถูกแจ้งเตือน (ทุกแบบ)",
+  "verifyingProgress": "กำลังตรวจข้อมูลการ์ด {done} จาก {total} ใบ…",
+  "importVerifySummary": "ผ่านการตรวจ {verified} ใบ ต้องตรวจสอบ {flagged} ใบ",
+  "reviewFlagged": "ดูการ์ดที่ถูกแจ้งเตือน"
+}

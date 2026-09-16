@@ -8,6 +8,9 @@ export type FilterPresetValues = {
   order?: "asc" | "desc";
   minPrice?: string;
   maxPrice?: string;
+  /** Saved presets round-trip the verification filter too — "my flagged NBA cards"
+   *  is exactly the kind of view worth keeping after a large import. */
+  verification?: string;
 };
 
 export type FilterPresetDTO = {

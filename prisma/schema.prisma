@@ -84,12 +84,26 @@ model Card {
   needsReview      Boolean      @default(false)
   reviewReason     String?
 
+  // Post-commit correctness audit — a separate question from enrichment, which only
+  // asks "did the stats lookup succeed?". Verification asks "is what this row says
+  // actually true?", and runs against real inventory rather than staged rows.
+  //
+  // null = never checked. VERIFIED | NEEDS_REVIEW | LIKELY_INCORRECT otherwise.
+  // Nothing in the verification pass may write any other Card column: it flags,
+  // it never corrects. See src/lib/verification/verify.ts.
+  verificationStatus String?
+  verificationNotes  String?
+  verifiedAt         DateTime?
+
   sales          Sale[]
   priceComps     PriceComp[]
   priceSnapshots PriceSnapshot[]
 
   @@unique([storeId, qrCode])
   @@index([storeId, category, status])
+  // Backs the "show me only flagged cards" filter, which is the whole point of
+  // running the audit — after a 500-row import nobody scrolls the full list.
+  @@index([storeId, verificationStatus])
   @@index([storeId, name])
   @@index([importBatchId])
 }
@@ -223,6 +237,9 @@ model ImportBatch {
   updatedCount  Int      @default(0)
   skippedCount  Int      @default(0)
   enrichedCount Int      @default(0)
+  /// Post-import verification outcome, so the completion summary can report it.
+  verifiedCount Int      @default(0)
+  flaggedCount  Int      @default(0)
   reviewCount   Int      @default(0)
   failedCount   Int      @default(0)
   status        String   @default("importing") // importing | enriching | complete

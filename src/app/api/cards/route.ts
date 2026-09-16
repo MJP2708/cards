@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { cardInputSchema } from "@/lib/validation/card";
 import { validateAttributes } from "@/lib/validation/attributes";
 import { getCategoryByKey } from "@/lib/categories";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
 import { requireStore } from "@/lib/auth/guards";
+import { verifyOneCard } from "@/lib/verification/verify";
 
 const SORTABLE_FIELDS = new Set([
   "name",
@@ -31,6 +32,7 @@ export async function GET(request: Request) {
   const isHot = searchParams.get("isHot");
   const minPrice = searchParams.get("minPrice");
   const maxPrice = searchParams.get("maxPrice");
+  const verification = searchParams.get("verification");
 
   const where: Prisma.CardWhereInput = {};
   if (category && category !== "all") {
@@ -44,6 +46,12 @@ export async function GET(request: Request) {
       ...(minPrice ? { gte: Number(minPrice) } : {}),
       ...(maxPrice ? { lte: Number(maxPrice) } : {}),
     };
+  }
+  if (verification) {
+    // "flagged" is the one people actually want after a big import: both problem
+    // buckets at once, without having to run the filter twice.
+    where.verificationStatus =
+      verification === "flagged" ? { in: ["NEEDS_REVIEW", "LIKELY_INCORRECT"] } : verification;
   }
   if (q) {
     where.OR = [
@@ -90,5 +98,17 @@ export async function POST(request: Request) {
   const card = parsed.data.id
     ? await gate.db.card.upsert({ where: { id: parsed.data.id }, create: data, update: {} })
     : await gate.db.card.create({ data });
+
+  // Hand-entered cards get the same audit as imported ones — a typo'd price or a
+  // wrong team is no less wrong for having been typed. After the response, so the
+  // save never waits on it.
+  after(async () => {
+    try {
+      await verifyOneCard(gate.db, card.id);
+    } catch {
+      // The card is saved; an unverified card simply shows as "not yet checked".
+    }
+  });
+
   return NextResponse.json(card, { status: 201 });
 }

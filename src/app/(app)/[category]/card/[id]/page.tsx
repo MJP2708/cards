@@ -10,6 +10,8 @@ import { useCard, useUpdateCard, useDeleteCard } from "@/lib/data/cards";
 import { CardForm, formValuesFromCard, formValuesToInput } from "@/components/cards/CardForm";
 import { MarkSoldDialog } from "@/components/cards/MarkSoldDialog";
 import { FactSheetPanel } from "@/components/cards/FactSheetPanel";
+import { VerificationPanel } from "@/components/cards/VerificationPanel";
+import { VerificationBadge } from "@/components/cards/VerificationBadge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { Button } from "@/components/ui/Button";
@@ -58,6 +60,7 @@ export default function CardDetailPage() {
           <div className="mt-1 flex items-center gap-2 text-sm text-foreground/60">
             <span>{category.displayName}</span>
             <StatusPill status={card.status} />
+            <VerificationBadge status={card.verificationStatus} notes={card.verificationNotes} />
             <span>{t("qty", { count: card.quantity })}</span>
           </div>
         </div>
@@ -117,7 +120,10 @@ export default function CardDetailPage() {
             }}
           />
         </div>
-        <div className="order-1 lg:order-2">
+        <div className="order-1 space-y-4 lg:order-2">
+          {/* Above the Fact Sheet: if the app thinks a detail is wrong, that has to
+              be seen before the figures derived from those details are trusted. */}
+          <VerificationPanel card={card} />
           <FactSheetPanel card={card} category={category} />
         </div>
       </div>

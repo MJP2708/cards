@@ -30,6 +30,7 @@ type Parsed = {
 };
 
 type Progress = { pending: number; enriched: number; review: number; total: number };
+type VerificationProgress = { unverified: number; verified: number; flagged: number };
 
 type Batch = {
   id: string;
@@ -54,6 +55,7 @@ type Step = "upload" | "map" | "categories" | "stage" | "done";
 
 export default function ImportPage() {
   const t = useTranslations("import");
+  const v = useTranslations("verification");
   const [step, setStep] = useState<Step>("upload");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -76,6 +78,7 @@ export default function ImportPage() {
   } | null>(null);
   const [batchId, setBatchId] = useState<string | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
+  const [verification, setVerification] = useState<VerificationProgress | null>(null);
   const [reviewCards, setReviewCards] = useState<
     { id: string; name: string; category: string; reviewReason: string | null }[]
   >([]);
@@ -256,6 +259,15 @@ export default function ImportPage() {
   const pump = useCallback(async (id: string) => {
     const status = await fetch(`/api/import/${id}`).then((r) => r.json());
     setProgress(status.progress);
+    setVerification(status.verification ?? null);
+
+    // Verification is its own phase after enrichment, driven by the same poller:
+    // it grades the stats snapshot enrichment just fetched, so it cannot run first.
+    if (status.batch.status === "verifying") {
+      await fetch(`/api/import/${id}/verify`, { method: "POST" });
+      return false;
+    }
+
     if (status.batch.status === "complete") {
       const cards = await fetch("/api/cards").then((r) => r.json());
       setReviewCards(
@@ -299,6 +311,7 @@ export default function ImportPage() {
     setResult(null);
     setBatchId(null);
     setProgress(null);
+    setVerification(null);
     setReviewCards([]);
     setError(null);
     if (fileInput.current) fileInput.current.value = "";
@@ -539,6 +552,27 @@ export default function ImportPage() {
           {progress && progress.pending === 0 && (
             <p className="mt-2 text-sm text-foreground/60">
               {t("enrichmentDone")} {t("resultEnriched", { enriched: progress.enriched })}
+            </p>
+          )}
+          {verification && verification.unverified > 0 && (
+            <p className="mt-2 text-sm text-foreground/60">
+              {v("verifyingProgress", {
+                done: verification.verified + verification.flagged,
+                total: verification.verified + verification.flagged + verification.unverified,
+              })}
+            </p>
+          )}
+          {verification && verification.unverified === 0 && (
+            <p className="mt-2 text-sm">
+              {v("importVerifySummary", {
+                verified: verification.verified,
+                flagged: verification.flagged,
+              })}{" "}
+              {verification.flagged > 0 && (
+                <Link href="/all?verification=flagged" className="underline">
+                  {v("reviewFlagged")}
+                </Link>
+              )}
             </p>
           )}
 

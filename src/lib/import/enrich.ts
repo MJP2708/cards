@@ -32,7 +32,12 @@ const CLAIM_TIMEOUT_MS = 3 * 60 * 1000;
 
 const CATEGORY_TO_SPORT: Record<string, ApiSport> = { NBA: "nba", Football: "football" };
 
-function cacheKey(category: string, name: string, series: string) {
+/**
+ * Exported so the verification pass can look up the very row enrichment wrote,
+ * and tell "the provider says no such player" apart from "the free tier refused
+ * the season" — two failures that look identical on the card itself.
+ */
+export function cacheKey(category: string, name: string, series: string) {
   return [category, name, series].map((part) => part.trim().toLowerCase()).join("|");
 }
 
@@ -194,14 +199,22 @@ export async function enrichNextChunk(
     db.card.count({ where: { importBatchId: batchId, needsReview: true } }),
   ]);
 
-  const status = remaining === 0 ? "complete" : "enriching";
+  // Verification runs after enrichment rather than beside it: the factual
+  // team-for-season check reads the snapshot enrichment just stored on the card,
+  // so running them concurrently would verify against data not yet fetched.
+  const unverified =
+    remaining === 0
+      ? await db.card.count({ where: { importBatchId: batchId, verificationStatus: null } })
+      : 0;
+
+  const status = remaining > 0 ? "enriching" : unverified > 0 ? "verifying" : "complete";
   await db.importBatch.update({
     where: { id: batchId },
     data: {
       enrichedCount: enriched,
       reviewCount: review,
       status,
-      finishedAt: remaining === 0 ? new Date() : null,
+      finishedAt: status === "complete" ? new Date() : null,
     },
   });
 

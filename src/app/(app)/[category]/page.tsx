@@ -4,10 +4,10 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { PackagePlus, Upload, Inbox, SearchX, LayoutGrid, Rows3, Plus, CircleDollarSign } from "lucide-react";
+import { PackagePlus, Upload, Inbox, SearchX, LayoutGrid, Rows3, Plus, CircleDollarSign, ShieldCheck } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
-import { useCards } from "@/lib/data/cards";
+import { useCards, useVerifyAll } from "@/lib/data/cards";
 import { useLongPress } from "@/hooks/useLongPress";
 import { BulkActionsBar } from "@/components/cards/BulkActionsBar";
 import { MarkSoldDialog } from "@/components/cards/MarkSoldDialog";
@@ -23,6 +23,7 @@ import { CardRowSkeleton } from "@/components/ui/Skeleton";
 import { CategoryIcon } from "@/components/icons/CategoryIcon";
 import { CardThumbnail } from "@/components/cards/CardThumbnail";
 import { CardGrid } from "@/components/cards/CardGrid";
+import { VerificationBadge } from "@/components/cards/VerificationBadge";
 import { PhotoLightbox } from "@/components/cards/PhotoLightbox";
 import { useUiStore } from "@/store/uiStore";
 import { motionProfileFor } from "@/lib/motionProfiles";
@@ -122,6 +123,14 @@ function InventoryRow({
             {t("hotBadge")}
           </Badge>
         )}
+        {/* Inline with the name rather than in its own column: the point is to see
+            a problem without opening the card, and a column that hides below `lg`
+            would be invisible on exactly the phone the booth runs on. */}
+        <VerificationBadge
+          status={card.verificationStatus}
+          notes={card.verificationNotes}
+          className="ml-1.5 align-middle"
+        />
         {/* Series + status ride along under the name below `md`, since those columns hide there. */}
         <div className="flex min-w-0 items-center gap-1.5 md:hidden">
           <p className="hidden min-w-0 truncate text-xs text-foreground/50 sm:block">{card.series}</p>
@@ -162,10 +171,19 @@ export default function CategoryInventoryPage() {
   const params = useParams<{ category: string }>();
   const searchParams = useSearchParams();
   const q = searchParams.get("q") ?? "";
+  // Seeded from the URL so the import summary can link straight to the problem
+  // cards ("/all?verification=flagged") instead of telling the user where to click.
+  const verificationParam = searchParams.get("verification") ?? "";
   const t = useTranslations("inventory");
   const common = useTranslations("common");
+  const v = useTranslations("verification");
   const { data: categories } = useCategories();
-  const [filters, setFilters] = useState<ChipFilters>({ status: "", minPrice: "", maxPrice: "" });
+  const [filters, setFilters] = useState<ChipFilters>({
+    status: "",
+    minPrice: "",
+    maxPrice: "",
+    verification: verificationParam,
+  });
   const [sort, setSort] = useState("dateAdded");
   const [order, setOrder] = useState<"asc" | "desc">("desc");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -173,6 +191,8 @@ export default function CategoryInventoryPage() {
   const [bundleCards, setBundleCards] = useState<CardDTO[] | null>(null);
   const [showImport, setShowImport] = useState(false);
   const [photoCard, setPhotoCard] = useState<CardDTO | null>(null);
+  const verifyAll = useVerifyAll();
+  const [verifySummary, setVerifySummary] = useState<string | null>(null);
   const listViewMode = useUiStore((s) => s.listViewMode);
   const setListViewMode = useUiStore((s) => s.setListViewMode);
 
@@ -187,6 +207,7 @@ export default function CategoryInventoryPage() {
     order,
     minPrice: filters.minPrice ? Number(filters.minPrice) : undefined,
     maxPrice: filters.maxPrice ? Number(filters.maxPrice) : undefined,
+    verification: filters.verification || undefined,
   });
 
   const totalValue = useMemo(
@@ -194,7 +215,7 @@ export default function CategoryInventoryPage() {
     [cards]
   );
 
-  const hasActiveFilters = !!(filters.status || filters.minPrice || filters.maxPrice || q);
+  const hasActiveFilters = !!(filters.status || filters.minPrice || filters.maxPrice || filters.verification || q);
 
   function toggleSelect(id: string) {
     setSelectedIds((prev) => {
@@ -248,6 +269,25 @@ export default function CategoryInventoryPage() {
                 <LayoutGrid className="h-4 w-4" />
               </button>
             </div>
+            <button
+              onClick={async () => {
+                setVerifySummary(null);
+                const result = await verifyAll.mutateAsync(isAll ? {} : { category: category?.key });
+                setVerifySummary(
+                  v("reverifyAllResult", {
+                    checked: result.checked,
+                    verified: result.verified,
+                    flagged: result.flagged,
+                  })
+                );
+              }}
+              disabled={verifyAll.isPending}
+              title={v("reverifyAllHelp")}
+              className="hidden items-center gap-1.5 rounded-md border border-border-1 px-3 py-2 text-sm hover:bg-surface-1 disabled:opacity-50 sm:flex"
+            >
+              <ShieldCheck className={`h-4 w-4 ${verifyAll.isPending ? "animate-pulse" : ""}`} aria-hidden />
+              {verifyAll.isPending ? v("reverifying") : v("reverifyAll")}
+            </button>
             {!isAll && (
               <button
                 onClick={() => setShowImport(true)}
@@ -266,6 +306,10 @@ export default function CategoryInventoryPage() {
             </Link>
           </div>
         </div>
+
+        {verifySummary && (
+          <p className="rounded-md border border-border-1 bg-surface-1 px-3 py-2 text-sm">{verifySummary}</p>
+        )}
 
         <FilterChipBar
           filters={filters}

@@ -1,0 +1,22 @@
+{
+  "panelTitle": "Data check",
+  "verifiedLabel": "Verified",
+  "needsReviewLabel": "Needs review",
+  "likelyIncorrectLabel": "Likely incorrect",
+  "notCheckedLabel": "Not checked yet",
+  "notCheckedHelp": "This card hasn't been through the data check yet. Use Re-verify to run it.",
+  "checkedAgo": "checked {time}",
+  "noNotes": "No notes recorded for this check.",
+  "neverAutoCorrects": "Nothing here has been changed for you — these are flags only. Edit the card yourself if you agree.",
+  "reverify": "Re-verify",
+  "reverifying": "Checking…",
+  "reverifyFailed": "Could not re-verify this card.",
+  "reverifyAll": "Re-verify all",
+  "reverifyAllHelp": "Re-runs the data check across this inventory. Useful once new price comps or player stats become available.",
+  "reverifyAllResult": "Checked {checked} cards — {verified} verified, {flagged} flagged for review.",
+  "filterLabel": "Data check",
+  "filterFlagged": "Flagged (any problem)",
+  "verifyingProgress": "Checking card data {done} of {total}…",
+  "importVerifySummary": "{verified} verified cleanly, {flagged} flagged for review.",
+  "reviewFlagged": "Review flagged cards"
+}

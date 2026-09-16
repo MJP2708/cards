@@ -16,6 +16,15 @@ export type ChipFilters = {
   status: string;
   minPrice: string;
   maxPrice: string;
+  /** "" | "flagged" | "LIKELY_INCORRECT" | "NEEDS_REVIEW" | "VERIFIED" | "unchecked" */
+  verification: string;
+};
+
+const VERIFICATION_CHIP_KEYS: Record<string, string> = {
+  flagged: "filterFlagged",
+  LIKELY_INCORRECT: "likelyIncorrectLabel",
+  NEEDS_REVIEW: "needsReviewLabel",
+  VERIFIED: "verifiedLabel",
 };
 
 // One filter system, not three: status/price live filters, sort, and saved
@@ -40,6 +49,7 @@ export function FilterChipBar({
   category: string | null;
 }) {
   const t = useTranslations("inventory");
+  const v = useTranslations("verification");
   const statusLabel = useStatusLabel();
   const [open, setOpen] = useState(false);
   const [presetsOpen, setPresetsOpen] = useState(false);
@@ -56,10 +66,22 @@ export function FilterChipBar({
   const createPreset = useCreateFilterPreset();
   const deletePreset = useDeleteFilterPreset();
 
-  const currentFilters: FilterPresetValues = { status: filters.status, sort, order, minPrice: filters.minPrice, maxPrice: filters.maxPrice };
+  const currentFilters: FilterPresetValues = {
+    status: filters.status,
+    sort,
+    order,
+    minPrice: filters.minPrice,
+    maxPrice: filters.maxPrice,
+    verification: filters.verification,
+  };
 
   function applyPreset(f: FilterPresetValues) {
-    onChangeFilters({ status: f.status ?? "", minPrice: f.minPrice ?? "", maxPrice: f.maxPrice ?? "" });
+    onChangeFilters({
+      status: f.status ?? "",
+      minPrice: f.minPrice ?? "",
+      maxPrice: f.maxPrice ?? "",
+      verification: f.verification ?? "",
+    });
     onChangeSort(f.sort ?? "dateAdded");
     onChangeOrder(f.order ?? "desc");
     setPresetsOpen(false);
@@ -79,6 +101,9 @@ export function FilterChipBar({
   if (filters.status) chips.push({ key: "status", label: statusLabel(filters.status) });
   if (filters.minPrice) chips.push({ key: "minPrice", label: t("chipMin", { amount: filters.minPrice }) });
   if (filters.maxPrice) chips.push({ key: "maxPrice", label: t("chipMax", { amount: filters.maxPrice }) });
+  if (filters.verification) {
+    chips.push({ key: "verification", label: VERIFICATION_CHIP_KEYS[filters.verification] ? v(VERIFICATION_CHIP_KEYS[filters.verification]) : filters.verification });
+  }
   const hasActiveFilters = chips.length > 0;
 
   function removeChip(key: keyof ChipFilters) {
@@ -111,6 +136,20 @@ export function FilterChipBar({
                     {statusLabel(s)}
                   </option>
                 ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-xs">
+              {v("filterLabel")}
+              <select
+                value={filters.verification}
+                onChange={(e) => onChangeFilters({ ...filters, verification: e.target.value })}
+                className="rounded-md border border-border-1 px-2 py-1.5"
+              >
+                <option value="">{t("any")}</option>
+                <option value="flagged">{v("filterFlagged")}</option>
+                <option value="LIKELY_INCORRECT">{v("likelyIncorrectLabel")}</option>
+                <option value="NEEDS_REVIEW">{v("needsReviewLabel")}</option>
+                <option value="VERIFIED">{v("verifiedLabel")}</option>
               </select>
             </label>
             <div className="flex gap-2">

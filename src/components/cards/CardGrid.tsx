@@ -7,6 +7,7 @@ import { StatusPill } from "@/components/ui/StatusPill";
 import { Price } from "@/components/ui/Price";
 import { Button } from "@/components/ui/Button";
 import { SwipeableRow } from "@/components/cards/SwipeableRow";
+import { VerificationBadge } from "@/components/cards/VerificationBadge";
 import type { CardDTO } from "@/lib/data/types";
 import type { CategoryDTO } from "@/lib/categories";
 
@@ -96,7 +97,10 @@ export function CardGrid({
                 <p className="truncate text-xs text-foreground/50">{card.series}</p>
                 <div className="mt-auto flex items-center justify-between gap-1">
                   <Price amountThb={card.askingPrice} size="sm" />
-                  <StatusPill status={card.status} className="hidden sm:inline-flex" />
+                  <span className="flex items-center gap-1">
+                    <VerificationBadge status={card.verificationStatus} notes={card.verificationNotes} />
+                    <StatusPill status={card.status} className="hidden sm:inline-flex" />
+                  </span>
                 </div>
                 {!isSold ? (
                   <Button size="sm" className="mt-1 w-full" onClick={() => onMarkSold(card)}>

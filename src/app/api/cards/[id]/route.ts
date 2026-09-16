@@ -1,10 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { Prisma } from "@/generated/prisma/client";
 import { cardUpdateSchema } from "@/lib/validation/card";
 import { validateAttributes } from "@/lib/validation/attributes";
 import { getCategoryByKey } from "@/lib/categories";
 import { readJsonBody, invalidJsonResponse, isPrismaNotFoundError, notFoundResponse } from "@/lib/api";
 import { requireOwner, requireStore } from "@/lib/auth/guards";
+import { verifyOneCard } from "@/lib/verification/verify";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -54,6 +55,17 @@ export async function PATCH(request: Request, { params }: Params) {
       where: { id },
       data: { ...parsed.data, attributes: parsed.data.attributes as Prisma.InputJsonValue | undefined },
     });
+
+    // An edit can introduce a problem as easily as it fixes one, so the verdict is
+    // recomputed rather than left describing the card as it used to be.
+    after(async () => {
+      try {
+        await verifyOneCard(gate.db, card.id);
+      } catch {
+        // Non-fatal: the edit is saved either way.
+      }
+    });
+
     return NextResponse.json(card);
   } catch (error) {
     if (isPrismaNotFoundError(error)) return notFoundResponse();

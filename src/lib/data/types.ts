@@ -22,6 +22,10 @@ export type CardDTO = {
   researchNotes: string | null;
   liveStats: import("@/lib/liveStats").LiveStatsSnapshot | null;
   liveStatsFetchedAt: string | null;
+  /** null = not yet checked. See src/lib/verification/verify.ts. */
+  verificationStatus: "VERIFIED" | "NEEDS_REVIEW" | "LIKELY_INCORRECT" | null;
+  verificationNotes: string | null;
+  verifiedAt: string | null;
   dateAdded: string;
   dateSold: string | null;
   soldPrice: number | null;
@@ -65,4 +69,6 @@ export type CardFilters = {
   isHot?: boolean;
   minPrice?: number;
   maxPrice?: number;
+  /** A status, or "flagged" for both problem buckets at once. */
+  verification?: string;
 };

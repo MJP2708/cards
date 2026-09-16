@@ -17,6 +17,7 @@ const NAMESPACES = [
   "onboarding",
   "import",
   "auth",
+  "verification",
 ] as const;
 
 async function loadMessages(locale: Locale) {
