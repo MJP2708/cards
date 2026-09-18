@@ -101,5 +101,8 @@
   "aboutHeading": "About to happen",
   "aboutLine": "{created} new cards created, {updated} existing cards updated, {skipped} rows skipped",
   "aboutFlagged": " — of which {count} still flagged for review and will be skipped unless you decide",
-  "catCreatePrefix": "Need a new category? Create it in Settings first, then re-upload:"
+  "catCreatePrefix": "Need a new category? Create it in Settings first, then re-upload:",
+  "photosProgress": "Fetching reference photos {done} of {total}…",
+  "photosFound": "{found} reference photos found, {without} without a match.",
+  "photosNone": "No reference photos were found for this batch."
 }

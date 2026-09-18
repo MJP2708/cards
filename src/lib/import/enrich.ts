@@ -199,15 +199,28 @@ export async function enrichNextChunk(
     db.card.count({ where: { importBatchId: batchId, needsReview: true } }),
   ]);
 
-  // Verification runs after enrichment rather than beside it: the factual
-  // team-for-season check reads the snapshot enrichment just stored on the card,
-  // so running them concurrently would verify against data not yet fetched.
-  const unverified =
+  // The tail of an import is a chain, not a fan-out, because each step reads what
+  // the one before it wrote: photos fetch comps, verification grades those comps
+  // and the stats snapshot enrichment just stored. Running them concurrently
+  // would check data that has not arrived yet.
+  const [pendingPhotos, unverified] =
     remaining === 0
-      ? await db.card.count({ where: { importBatchId: batchId, verificationStatus: null } })
-      : 0;
+      ? await Promise.all([
+          db.card.count({
+            where: { importBatchId: batchId, photoStatus: { in: ["pending", "processing"] } },
+          }),
+          db.card.count({ where: { importBatchId: batchId, verificationStatus: null } }),
+        ])
+      : [0, 0];
 
-  const status = remaining > 0 ? "enriching" : unverified > 0 ? "verifying" : "complete";
+  const status =
+    remaining > 0
+      ? "enriching"
+      : pendingPhotos > 0
+        ? "photos"
+        : unverified > 0
+          ? "verifying"
+          : "complete";
   await db.importBatch.update({
     where: { id: batchId },
     data: {

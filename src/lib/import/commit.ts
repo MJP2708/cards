@@ -60,6 +60,10 @@ export async function commitImport(
                 attributes: row.card.attributes as Prisma.InputJsonValue | undefined,
                 importBatchId: batch.id,
                 enrichmentStatus: "pending",
+                // Queued for the post-import reference-photo pass. Rows that
+                // already carry a photo are filtered out when the pass runs, not
+                // here, so the queue reflects the batch rather than the mapping.
+                photoStatus: "pending",
                 needsReview: row.needsReview ?? false,
                 reviewReason: row.reviewReason ?? null,
               })),

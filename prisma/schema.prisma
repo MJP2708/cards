@@ -60,6 +60,12 @@ model Card {
   // condition and centring are exactly what it cannot be trusted for — so the UI
   // labels it, and nothing may overwrite a photo the seller took themselves.
   photoIsStock Boolean  @default(false)
+  // Tracks the post-import reference-photo pass, so it can run in resumable
+  // chunks and terminate: pending -> fetched | none | skipped | failed.
+  // null means the pass has never been run for this card (e.g. added by hand).
+  // "none" is a real answer — the marketplace had no matching listing — and must
+  // be distinguishable from "not tried yet" or the pass would never finish.
+  photoStatus  String?
   // Unique per store, not globally: two stores printing their own labels must be
   // able to use the same short code without colliding.
   qrCode      String?
@@ -106,6 +112,7 @@ model Card {
   @@index([storeId, verificationStatus])
   @@index([storeId, name])
   @@index([importBatchId])
+  @@index([importBatchId, photoStatus])
 }
 
 model Category {
@@ -240,6 +247,8 @@ model ImportBatch {
   /// Post-import verification outcome, so the completion summary can report it.
   verifiedCount Int      @default(0)
   flaggedCount  Int      @default(0)
+  /// Reference photos found for this batch's cards.
+  photoCount    Int      @default(0)
   reviewCount   Int      @default(0)
   failedCount   Int      @default(0)
   status        String   @default("importing") // importing | enriching | complete

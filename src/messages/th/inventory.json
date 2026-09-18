@@ -55,5 +55,8 @@
   "confirmDeleteMany": "ลบการ์ด {count} ใบ? การกระทำนี้ไม่สามารถย้อนกลับได้",
   "cardsDeleted": "ลบการ์ด {count} ใบแล้ว",
   "swipeToSell": "ขาย",
-  "swipeToSelect": "เลือก"
+  "swipeToSelect": "เลือก",
+  "stockPhotoBadge": "รูปอ้างอิง",
+  "stockPhotoAlt": "{name} — รูปอ้างอิงของการ์ดอีกใบ ไม่ใช่ใบนี้",
+  "stockPhotoWarning": "รูปอ้างอิงจากประกาศขายในตลาด เป็นการ์ดอีกใบที่เหมือนกัน กรุณาอย่าใช้ตัดสินสภาพหรือการจัดกึ่งกลางของใบนี้"
 }

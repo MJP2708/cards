@@ -10,20 +10,27 @@ export async function GET(_request: Request, { params }: Params) {
   const batch = await gate.db.importBatch.findUnique({ where: { id } });
   if (!batch) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const [pending, enriched, review, unverified, verified, flagged] = await Promise.all([
-    gate.db.card.count({ where: { importBatchId: id, enrichmentStatus: "pending" } }),
-    gate.db.card.count({ where: { importBatchId: id, enrichmentStatus: "enriched" } }),
-    gate.db.card.count({ where: { importBatchId: id, needsReview: true } }),
-    gate.db.card.count({ where: { importBatchId: id, verificationStatus: null } }),
-    gate.db.card.count({ where: { importBatchId: id, verificationStatus: "VERIFIED" } }),
-    gate.db.card.count({
-      where: { importBatchId: id, verificationStatus: { in: ["NEEDS_REVIEW", "LIKELY_INCORRECT"] } },
-    }),
-  ]);
+  const [pending, enriched, review, unverified, verified, flagged, photoPending, photoFound, photoNone] =
+    await Promise.all([
+      gate.db.card.count({ where: { importBatchId: id, enrichmentStatus: "pending" } }),
+      gate.db.card.count({ where: { importBatchId: id, enrichmentStatus: "enriched" } }),
+      gate.db.card.count({ where: { importBatchId: id, needsReview: true } }),
+      gate.db.card.count({ where: { importBatchId: id, verificationStatus: null } }),
+      gate.db.card.count({ where: { importBatchId: id, verificationStatus: "VERIFIED" } }),
+      gate.db.card.count({
+        where: { importBatchId: id, verificationStatus: { in: ["NEEDS_REVIEW", "LIKELY_INCORRECT"] } },
+      }),
+      gate.db.card.count({
+        where: { importBatchId: id, photoStatus: { in: ["pending", "processing"] } },
+      }),
+      gate.db.card.count({ where: { importBatchId: id, photoStatus: "fetched" } }),
+      gate.db.card.count({ where: { importBatchId: id, photoStatus: { in: ["none", "skipped", "failed"] } } }),
+    ]);
 
   return NextResponse.json({
     batch,
     progress: { pending, enriched, review, total: batch.importedCount },
     verification: { unverified, verified, flagged },
+    photos: { pending: photoPending, found: photoFound, withoutPhoto: photoNone },
   });
 }

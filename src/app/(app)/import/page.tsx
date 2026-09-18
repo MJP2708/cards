@@ -31,6 +31,7 @@ type Parsed = {
 
 type Progress = { pending: number; enriched: number; review: number; total: number };
 type VerificationProgress = { unverified: number; verified: number; flagged: number };
+type PhotoProgress = { pending: number; found: number; withoutPhoto: number };
 
 type Batch = {
   id: string;
@@ -79,6 +80,7 @@ export default function ImportPage() {
   const [batchId, setBatchId] = useState<string | null>(null);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [verification, setVerification] = useState<VerificationProgress | null>(null);
+  const [photos, setPhotos] = useState<PhotoProgress | null>(null);
   const [reviewCards, setReviewCards] = useState<
     { id: string; name: string; category: string; reviewReason: string | null }[]
   >([]);
@@ -260,6 +262,14 @@ export default function ImportPage() {
     const status = await fetch(`/api/import/${id}`).then((r) => r.json());
     setProgress(status.progress);
     setVerification(status.verification ?? null);
+    setPhotos(status.photos ?? null);
+
+    // Reference photos come after enrichment and before verification: the eBay
+    // search that finds a picture also records the comps the price check reads.
+    if (status.batch.status === "photos") {
+      await fetch(`/api/import/${id}/photos`, { method: "POST" });
+      return false;
+    }
 
     // Verification is its own phase after enrichment, driven by the same poller:
     // it grades the stats snapshot enrichment just fetched, so it cannot run first.
@@ -312,6 +322,7 @@ export default function ImportPage() {
     setBatchId(null);
     setProgress(null);
     setVerification(null);
+    setPhotos(null);
     setReviewCards([]);
     setError(null);
     if (fileInput.current) fileInput.current.value = "";
@@ -552,6 +563,21 @@ export default function ImportPage() {
           {progress && progress.pending === 0 && (
             <p className="mt-2 text-sm text-foreground/60">
               {t("enrichmentDone")} {t("resultEnriched", { enriched: progress.enriched })}
+            </p>
+          )}
+          {photos && photos.pending > 0 && (
+            <p className="mt-2 text-sm text-foreground/60">
+              {t("photosProgress", {
+                done: photos.found + photos.withoutPhoto,
+                total: photos.found + photos.withoutPhoto + photos.pending,
+              })}
+            </p>
+          )}
+          {photos && photos.pending === 0 && (
+            <p className="mt-2 text-sm text-foreground/60">
+              {photos.found > 0
+                ? t("photosFound", { found: photos.found, without: photos.withoutPhoto })
+                : t("photosNone")}
             </p>
           )}
           {verification && verification.unverified > 0 && (

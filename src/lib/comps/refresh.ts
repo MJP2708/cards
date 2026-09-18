@@ -17,7 +17,17 @@ function median(values: number[]): number {
 }
 
 export type CompRefreshResult =
-  | { ok: true; matched: number; median: number; imageApplied: boolean; query: string }
+  | {
+      ok: true;
+      matched: number;
+      /** null when comps were skipped for want of an exchange rate. */
+      median: number | null;
+      imageApplied: boolean;
+      compsWritten: boolean;
+      /** Why comps were skipped, when the image still came through. */
+      note?: string;
+      query: string;
+    }
   | { ok: false; reason: string; retryable: boolean };
 
 type RefreshableCard = {
@@ -38,8 +48,10 @@ type RefreshableCard = {
  * refresh, which is what makes a trend line possible: the comps table alone can
  * never express change over time because it is rewritten every time.
  *
- * Shared by the manual "Refresh comps" button and the worksheet import, so both
- * produce identical data rather than drifting apart.
+ * Shared by the manual "Refresh comps" button and the post-import photo pass, so
+ * both produce identical data rather than drifting apart. One eBay search yields
+ * both the price spread and a reference image, so the two are fetched together
+ * rather than paying for the same call twice.
  */
 export async function refreshCompsForCard(
   db: StoreDb,
@@ -52,15 +64,12 @@ export async function refreshCompsForCard(
   }
 
   // Everything here is denominated in THB and eBay quotes USD. Without a rate we
-  // would write dollar figures into baht fields and misprice by roughly 35x.
+  // would write dollar figures into baht fields and misprice by roughly 35x — so
+  // prices are withheld, but the listing photo is not: a picture needs no
+  // currency conversion, and a seller who has not set a rate still needs to see
+  // what the card looks like.
   const settings = await db.settings.findUnique({ where: { storeId } });
-  if (!settings?.usdExchangeRate) {
-    return {
-      ok: false,
-      reason: "Set a THB-per-USD exchange rate in Settings first — eBay quotes prices in USD.",
-      retryable: false,
-    };
-  }
+  const rate = settings?.usdExchangeRate ?? null;
 
   const query = buildQuery(card);
   let results;
@@ -78,13 +87,10 @@ export async function refreshCompsForCard(
     return { ok: false, reason: `No active eBay listings matched "${query}".`, retryable: false };
   }
 
-  const pricesThb = results
-    .map((result) => Math.round(fromUsd(result.priceUsd, settings.usdExchangeRate)!))
-    .filter((price) => Number.isFinite(price));
-
-  if (pricesThb.length === 0) {
-    return { ok: false, reason: "eBay returned listings with no usable prices.", retryable: false };
-  }
+  const pricesThb = rate
+    ? results.map((result) => Math.round(fromUsd(result.priceUsd, rate)!)).filter((price) => Number.isFinite(price))
+    : [];
+  const compsWritten = pricesThb.length > 0;
 
   // Only fill in an image when the card has none, or when the one it has was itself
   // pulled from a listing. A photo the seller took always wins.
@@ -93,28 +99,30 @@ export async function refreshCompsForCard(
     Boolean(options.applyStockImage && listingImage && (!card.photoFront || card.photoIsStock));
 
   await db.$transaction(async (tx) => {
-    // Replace only previously auto-fetched comps — comps logged by hand are left alone.
-    await tx.priceComp.deleteMany({ where: { cardId: card.id, source: EBAY_COMP_SOURCE } });
-    await tx.priceComp.createMany({
-      data: results.map((result, index) => ({
-        storeId,
-        cardId: card.id,
-        source: EBAY_COMP_SOURCE,
-        price: pricesThb[index] ?? pricesThb[0],
-        url: result.url,
-      })),
-    });
-    await tx.priceSnapshot.create({
-      data: {
-        storeId,
-        cardId: card.id,
-        source: EBAY_COMP_SOURCE,
-        medianPrice: Math.round(median(pricesThb)),
-        minPrice: Math.min(...pricesThb),
-        maxPrice: Math.max(...pricesThb),
-        sampleSize: pricesThb.length,
-      },
-    });
+    if (compsWritten) {
+      // Replace only previously auto-fetched comps — comps logged by hand are left alone.
+      await tx.priceComp.deleteMany({ where: { cardId: card.id, source: EBAY_COMP_SOURCE } });
+      await tx.priceComp.createMany({
+        data: results.map((result, index) => ({
+          storeId,
+          cardId: card.id,
+          source: EBAY_COMP_SOURCE,
+          price: pricesThb[index] ?? pricesThb[0],
+          url: result.url,
+        })),
+      });
+      await tx.priceSnapshot.create({
+        data: {
+          storeId,
+          cardId: card.id,
+          source: EBAY_COMP_SOURCE,
+          medianPrice: Math.round(median(pricesThb)),
+          minPrice: Math.min(...pricesThb),
+          maxPrice: Math.max(...pricesThb),
+          sampleSize: pricesThb.length,
+        },
+      });
+    }
     if (applyImage && listingImage) {
       await tx.card.update({
         where: { id: card.id },
@@ -126,8 +134,12 @@ export async function refreshCompsForCard(
   return {
     ok: true,
     matched: results.length,
-    median: Math.round(median(pricesThb)),
+    median: compsWritten ? Math.round(median(pricesThb)) : null,
     imageApplied: applyImage,
+    compsWritten,
+    note: compsWritten
+      ? undefined
+      : "Prices weren't recorded — set a THB-per-USD exchange rate in Settings, since eBay quotes in USD.",
     query,
   };
 }

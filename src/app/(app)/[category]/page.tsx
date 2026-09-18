@@ -85,6 +85,7 @@ function InventoryRow({
              view is where the full-size image lives. */
           size="sm"
           onClick={() => onViewPhoto(card)}
+          isStock={card.photoIsStock}
         />
       </td>
       {isAll && (
@@ -417,6 +418,7 @@ export default function CategoryInventoryPage() {
           <PhotoLightbox
             name={photoCard.name}
             photoFront={photoCard.photoFront}
+            isStock={photoCard.photoIsStock}
             photoBack={photoCard.photoBack}
             onClose={() => setPhotoCard(null)}
           />

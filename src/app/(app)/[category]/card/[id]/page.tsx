@@ -106,6 +106,7 @@ export default function CardDetailPage() {
           <CardForm
             category={category}
             initial={formValuesFromCard(card)}
+            photoIsStock={card.photoIsStock}
             submitLabel={common("saveChanges")}
             errors={errors}
             onSubmit={async (values) => {

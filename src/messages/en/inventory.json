@@ -55,5 +55,8 @@
   "confirmDeleteMany": "Delete {count} cards? This cannot be undone.",
   "cardsDeleted": "{count, plural, one {# card deleted} other {# cards deleted}}",
   "swipeToSell": "Sell",
-  "swipeToSelect": "Select"
+  "swipeToSelect": "Select",
+  "stockPhotoBadge": "Reference",
+  "stockPhotoAlt": "{name} — reference photo of another copy, not this card",
+  "stockPhotoWarning": "Reference photo from a marketplace listing — this is another copy of the same card, so don't judge condition or centring from it."
 }

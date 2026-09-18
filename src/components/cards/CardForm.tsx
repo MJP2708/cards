@@ -119,6 +119,7 @@ export function CardForm({
   submitLabel,
   errors,
   allowAddSimilar = false,
+  photoIsStock = false,
 }: {
   category: CategoryDTO;
   initial: CardFormValues;
@@ -129,6 +130,8 @@ export function CardForm({
   submitLabel: string;
   errors?: string[];
   allowAddSimilar?: boolean;
+  /** Front photo was auto-filled from a listing, so the seller may want their own. */
+  photoIsStock?: boolean;
 }) {
   const t = useTranslations("cardForm");
   const statusLabel = useStatusLabel();
@@ -378,6 +381,11 @@ export function CardForm({
 
       <FormSection icon={ImagePlus} title={t("sectionPhotosNotes")}>
         <PhotoUploadField label={t("frontPhoto")} value={values.photoFront} onChange={(url) => update("photoFront", url)} />
+        {photoIsStock && values.photoFront && (
+          // The seller is the only one who can replace this with a picture of the
+          // card actually in the box, so the prompt belongs next to the upload.
+          <p className="-mt-1 text-xs text-amber-700 dark:text-amber-500">{t("stockPhotoReplaceHint")}</p>
+        )}
         <PhotoUploadField label={t("backPhoto")} value={values.photoBack} onChange={(url) => update("photoBack", url)} />
 
         <label className="flex flex-col gap-1">

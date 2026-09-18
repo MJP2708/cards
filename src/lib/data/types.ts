@@ -15,6 +15,10 @@ export type CardDTO = {
   status: "In Stock" | "Sold" | "Reserved" | "On Hold";
   photoFront: string | null;
   photoBack: string | null;
+  /** photoFront came from a marketplace listing, not the seller's own camera. */
+  photoIsStock: boolean;
+  /** Post-import photo pass: null | pending | processing | fetched | none | skipped | failed. */
+  photoStatus: string | null;
   qrCode: string | null;
   packed: boolean;
   isHot: boolean;

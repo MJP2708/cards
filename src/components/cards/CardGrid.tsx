@@ -55,6 +55,7 @@ export function CardGrid({
                   themeTokens={cardCategory?.themeTokens}
                   size="lg"
                   onClick={() => onViewPhoto(card)}
+                  isStock={card.photoIsStock}
                 />
                 <button
                   onClick={() => onToggleSelect(card.id)}

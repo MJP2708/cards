@@ -34,5 +34,6 @@
   "decreaseQuantity": "Decrease quantity",
   "increaseQuantity": "Increase quantity",
   "saveAndAddSimilar": "Save & Add Similar",
-  "saving": "Saving…"
+  "saving": "Saving…",
+  "stockPhotoReplaceHint": "This is a reference photo from a marketplace listing, not your card. Upload your own to show its real condition."
 }

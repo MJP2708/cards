@@ -124,6 +124,10 @@ export function useCreateCard() {
           quantity: input.quantity ?? 1,
           status: input.status ?? "In Stock",
           photoFront: input.photoFront ?? null,
+          // An offline card's photo is whatever the seller attached themselves;
+          // nothing has been auto-filled for it yet.
+          photoIsStock: false,
+          photoStatus: null,
           photoBack: input.photoBack ?? null,
           qrCode: input.qrCode ?? null,
           packed: input.packed ?? false,

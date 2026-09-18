@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { X } from "lucide-react";
 import { isOptimizableImageUrl } from "@/lib/images";
@@ -11,15 +12,21 @@ export function PhotoLightbox({
   photoFront,
   photoBack,
   onClose,
+  isStock = false,
 }: {
   name: string;
   photoFront: string | null;
   photoBack: string | null;
   onClose: () => void;
+  /** Front photo came from a marketplace listing rather than the seller's camera. */
+  isStock?: boolean;
 }) {
+  const t = useTranslations("inventory");
   const photos = [photoFront, photoBack].filter((p): p is string => !!p);
   const [index, setIndex] = useState(0);
   const active = photos[index];
+  // Only the front is ever auto-filled, so the caveat applies to that image only.
+  const showingStock = isStock && active === photoFront;
 
   return (
     <Modal onClose={onClose} variant="bare" backdropClassName="bg-black/80" panelClassName="relative flex flex-col items-center gap-4 p-6">
@@ -49,6 +56,11 @@ export function PhotoLightbox({
       </div>
 
       <p className="text-sm text-white/80">{name}</p>
+      {showingStock && (
+        // Full size is exactly where someone would try to judge condition from the
+        // picture, so this is where the warning has to be explicit rather than a badge.
+        <p className="max-w-md text-center text-xs text-amber-300">{t("stockPhotoWarning")}</p>
+      )}
 
       {photos.length > 1 && (
         <div className="flex gap-2">

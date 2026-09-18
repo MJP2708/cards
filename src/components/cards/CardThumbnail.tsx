@@ -14,26 +14,45 @@ export function CardThumbnail({
   themeTokens,
   size = "sm",
   onClick,
+  isStock = false,
 }: {
   photoFront: string | null;
   name: string;
   themeTokens: Pick<ThemeTokens, "accent" | "iconSet"> | undefined;
   size?: keyof typeof SIZES;
   onClick?: () => void;
+  /** Photo came from a marketplace listing, not the seller's own camera. */
+  isStock?: boolean;
 }) {
   const t = useTranslations("inventory");
   const width = SIZES[size];
   const accent = themeTokens?.accent ?? "#64748B";
 
   const content = photoFront ? (
-    <Image
-      src={photoFront}
-      alt={name}
-      fill
-      sizes={`${width}px`}
-      unoptimized={!isOptimizableImageUrl(photoFront)}
-      className="object-cover"
-    />
+    <>
+      <Image
+        // The alt text carries the caveat too: a screen-reader user gets the same
+        // warning the sighted badge gives, rather than a picture described as if
+        // it were this card.
+        src={photoFront}
+        alt={isStock ? t("stockPhotoAlt", { name }) : name}
+        fill
+        sizes={`${width}px`}
+        unoptimized={!isOptimizableImageUrl(photoFront)}
+        className="object-cover"
+      />
+      {isStock && (
+        // Only drawn where it is legible. At 40px the badge would be a smudge, so
+        // the small size relies on the alt text and the detail view instead of
+        // showing a mark nobody can read.
+        <span
+          className="pointer-events-none absolute inset-x-0 bottom-0 bg-black/60 px-1 py-0.5 text-center text-[9px] font-medium uppercase leading-tight tracking-wide text-white"
+          style={{ display: width >= SIZES.md ? undefined : "none" }}
+        >
+          {t("stockPhotoBadge")}
+        </span>
+      )}
+    </>
   ) : (
     <div
       className="flex h-full w-full items-center justify-center"
