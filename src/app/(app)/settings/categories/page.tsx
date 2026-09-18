@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { useCategories } from "@/hooks/useCategories";
 import { useSettings, useUpdateSettings } from "@/lib/data/settings";
 import { useUiStore } from "@/store/uiStore";
 import { useOnboardingStore } from "@/store/onboardingStore";
 import { CategoryIcon } from "@/components/icons/CategoryIcon";
+import { CategoryRenameList } from "@/components/settings/CategoryRenameList";
 import { HEADER_FONTS, ICON_SETS, type FieldDef, type ThemeTokens } from "@/lib/fieldSchema";
 
 type DraftField = FieldDef & { optionsText: string };
@@ -20,7 +20,6 @@ export default function SettingsPage() {
   const t = useTranslations("settings");
   const common = useTranslations("common");
   const auth = useTranslations("auth");
-  const { data: categories } = useCategories();
 
   const HEADER_FONT_LABELS: Record<ThemeTokens["headerFont"], string> = {
     oswald: t("fontOswald"),
@@ -213,17 +212,7 @@ export default function SettingsPage() {
         </a>
       </section>
 
-      <section className="space-y-3 rounded-lg border border-border-1 p-4">
-        <h2 className="text-sm font-semibold text-foreground/70">{t("existingCategories")}</h2>
-        <ul className="flex flex-wrap gap-2 text-sm">
-          {categories?.map((c) => (
-            <li key={c.key} className="flex items-center gap-2 rounded-full border border-border-1 px-3 py-1">
-              <CategoryIcon iconSet={c.themeTokens.iconSet} className="h-3.5 w-3.5" style={{ color: c.themeTokens.accent }} />
-              {c.displayName}
-            </li>
-          ))}
-        </ul>
-      </section>
+      <CategoryRenameList />
 
       <section className="space-y-4 rounded-lg border border-border-1 p-4">
         <h2 className="text-sm font-semibold text-foreground/70">{t("addCustomCategory")}</h2>

@@ -50,5 +50,17 @@
   "fieldOptionsPlaceholder": "option1, option2",
   "required": "required",
   "remove": "remove",
-  "createCategoryFailed": "Failed to create category"
+  "createCategoryFailed": "Failed to create category",
+  "rename": "Rename",
+  "renaming": "Renaming…",
+  "renameFailed": "Could not rename that category.",
+  "renameHint": "The display name is just a label. The key is the category's web address and is stored on every card in it — changing it moves them all.",
+  "displayNameHint": "Shown throughout the app. Any text is fine.",
+  "categoryKeyHint": "Letters, digits, dashes. This category will live at {url}",
+  "keyChangeWarning": "Changing the key moves every card in this category and updates saved filters and import templates. Bookmarks to the old address will stop working.",
+  "renamedTo": "Renamed to \"{name}\" (key: {key}).",
+  "renameMovedCards": "{count} cards moved.",
+  "renameMovedPresets": "{count} saved filters updated.",
+  "renameMovedTemplates": "{count} import templates updated.",
+  "builtInLabel": "built-in"
 }
