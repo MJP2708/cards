@@ -250,7 +250,46 @@ async function main() {
   }
   await workbook.xlsx.writeFile(out);
   console.log(`wrote ${out} — ${matched.length} rows`);
-  console.log("Import it with \"Re-align numbers only\" ticked, and check the preview before applying.");
+  console.log('Import it with "Re-align numbers only" ticked, and check the preview before applying.');
+
+  // A second, complete file: every card in the store, carrying the corrected
+  // numbering and every column the importer reads.
+  //
+  // This is the restore point. The structured name/series data in the database
+  // is the only copy left — the files it was imported from are gone — so before
+  // anyone considers emptying the store, that data needs to exist somewhere
+  // outside it. Cards the vendor's list never mentioned keep a number past the
+  // end rather than being dropped.
+  if (process.argv.includes("--full")) {
+    const fullPath = out.replace(/\.xlsx$/, "-full.xlsx");
+    const numberByCard = new Map(matched.map(({ row, card }) => [card.id, row.number]));
+    let spare = Math.max(0, ...matched.map((m) => m.row.number));
+
+    const fullBook = new ExcelJS.Workbook();
+    const fullSheet = fullBook.addWorksheet("Inventory");
+    fullSheet.addRow([
+      "Lookup #", "Category", "Name", "Series/Set", "Year", "Card Number",
+      "Card Type", "Rarity", "Grade", "Team", "Cost Basis", "Asking Price",
+      "Quantity", "Status",
+    ]);
+
+    const full = await prisma.card.findMany({ where: { storeId } });
+    const ordered = [...full].sort(
+      (a, b) => (numberByCard.get(a.id) ?? Infinity) - (numberByCard.get(b.id) ?? Infinity)
+    );
+    for (const card of ordered) {
+      const attributes = (card.attributes as Record<string, unknown> | null) ?? {};
+      fullSheet.addRow([
+        numberByCard.get(card.id) ?? ++spare,
+        card.category, card.name, card.series, card.year ?? "", card.cardNumber ?? "",
+        card.cardType ?? "", card.rarity ?? "", card.grade ?? "",
+        typeof attributes.team === "string" ? attributes.team : "",
+        card.costBasis, card.askingPrice, card.quantity, card.status,
+      ]);
+    }
+    await fullBook.xlsx.writeFile(fullPath);
+    console.log(`wrote ${fullPath} — all ${full.length} cards, corrected numbering, full columns`);
+  }
 
   await prisma.$disconnect();
 }
