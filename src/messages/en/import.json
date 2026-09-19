@@ -106,5 +106,19 @@
   "photosFound": "{found} reference photos found, {without} without a match.",
   "photosNone": "No reference photos were found for this batch.",
   "colLookup": "Lookup #",
-  "lookupAuto": "auto"
+  "lookupAuto": "auto",
+  "reHeading": "Re-align card numbers to this file",
+  "reIntro": "This changes only each card's lookup number so it matches the number in your file. No other card detail is touched, and nothing is added or removed.",
+  "reStatusRenumber": "Will renumber",
+  "reStatusCorrect": "Already correct",
+  "reStatusNotFound": "No matching card",
+  "reStatusAmbiguous": "Too similar to tell apart",
+  "reStatusInvalid": "Unusable row",
+  "reColChange": "Number",
+  "reUntouched": "{count} cards in this store aren't in the file and keep their current numbers: {examples}",
+  "reMode": "Re-align numbers only",
+  "reApply": "Apply renumbering",
+  "reApplying": "Renumbering…",
+  "reDone": "{count} cards renumbered to match your file.",
+  "reStatusConflict": "Number already taken"
 }

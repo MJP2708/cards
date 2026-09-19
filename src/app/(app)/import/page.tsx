@@ -8,9 +8,11 @@ import { InlineError } from "@/components/ui/InlineError";
 import { MappingStep } from "@/components/import/MappingStep";
 import { CategoryStep } from "@/components/import/CategoryStep";
 import { StagingStep } from "@/components/import/StagingStep";
+import { RenumberStep } from "@/components/import/RenumberStep";
 import type { ImportField } from "@/lib/import/fields";
 import type { CategoryValueSuggestion, FieldMap, FieldSuggestion } from "@/lib/import/mapping";
 import type { MatchStatus, RowAction, StagedImport } from "@/lib/import/stage";
+import type { RenumberPlan } from "@/lib/import/renumber";
 
 type RawRow = { rowNumber: number; cells: string[] };
 
@@ -52,7 +54,7 @@ type Batch = {
  * anywhere until the final confirm — and changing a mapping re-previews without
  * re-uploading the file.
  */
-type Step = "upload" | "map" | "categories" | "stage" | "done";
+type Step = "upload" | "map" | "categories" | "stage" | "renumber" | "done";
 
 export default function ImportPage() {
   const t = useTranslations("import");
@@ -66,6 +68,15 @@ export default function ImportPage() {
   const [categoryValues, setCategoryValues] = useState<CategoryValueSuggestion[]>([]);
   const [categoryMap, setCategoryMap] = useState<Record<string, string>>({});
   const [staged, setStaged] = useState<StagedImport | null>(null);
+  /**
+   * Re-align mode changes only lookup numbers. It exists because the app's own
+   * sequence drifts from the numbers written on the sleeves — gaps in the
+   * vendor's sheet, or a second import landing at the end — and once it drifts
+   * the numbers are worse than useless at the table.
+   */
+  const [renumberMode, setRenumberMode] = useState(false);
+  const [renumberPlan, setRenumberPlan] = useState<RenumberPlan | null>(null);
+  const [renumberDone, setRenumberDone] = useState<number | null>(null);
   const [actions, setActions] = useState<Record<number, RowAction>>({});
 
   const [saveTemplate, setSaveTemplate] = useState(false);
@@ -157,8 +168,37 @@ export default function ImportPage() {
     }
   }
 
+  async function goToRenumber(apply: boolean) {
+    if (!parsed) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/import/renumber", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          headers: parsed.headers,
+          rows: parsed.rows,
+          fieldMap,
+          categoryMap,
+          apply,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : t("errStage"));
+      setRenumberPlan(data.plan);
+      if (apply && data.applied) setRenumberDone(data.applied.renumbered);
+      setStep("renumber");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : t("errStage"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function goToStaging() {
     if (!parsed) return;
+    if (renumberMode) return goToRenumber(false);
     setBusy(true);
     setError(null);
     try {
@@ -319,6 +359,8 @@ export default function ImportPage() {
     setCategoryMap({});
     setStaged(null);
     setActions({});
+    setRenumberPlan(null);
+    setRenumberDone(null);
     setResult(null);
     setBatchId(null);
     setProgress(null);
@@ -385,6 +427,18 @@ export default function ImportPage() {
             onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
             className="block w-full text-sm"
           />
+          <label className="mt-3 flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={renumberMode}
+              onChange={(e) => setRenumberMode(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              <span className="font-medium">{t("reMode")}</span>
+              <span className="block text-xs text-foreground/60">{t("reIntro")}</span>
+            </span>
+          </label>
           {busy && <p className="mt-3 text-sm text-foreground/60">{t("parsing")}</p>}
 
           {history.length > 0 && (
@@ -535,6 +589,31 @@ export default function ImportPage() {
             >
               {t("back")}
             </button>
+            <button onClick={reset} className="rounded-md border border-border-1 px-4 py-2 text-sm">
+              {t("startOver")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {step === "renumber" && renumberPlan && (
+        <div className="mt-4">
+          <RenumberStep plan={renumberPlan} />
+          {renumberDone !== null ? (
+            <div className="mt-4 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+              {t("reDone", { count: renumberDone })}
+            </div>
+          ) : null}
+          <div className="mt-4 flex gap-2">
+            {renumberDone === null && (
+              <button
+                onClick={() => goToRenumber(true)}
+                disabled={busy || renumberPlan.summary.renumber === 0}
+                className="rounded-md bg-foreground px-4 py-2 text-sm font-medium text-background disabled:opacity-50"
+              >
+                {busy ? t("reApplying") : t("reApply")}
+              </button>
+            )}
             <button onClick={reset} className="rounded-md border border-border-1 px-4 py-2 text-sm">
               {t("startOver")}
             </button>
