@@ -26,7 +26,15 @@ const STATUS_STYLES: Record<RenumberStatus, string> = {
  * physical sleeves — so every row's before-and-after is shown, and the rows
  * that cannot be matched are shown just as prominently as the ones that can.
  */
-export function RenumberStep({ plan }: { plan: RenumberPlan }) {
+export function RenumberStep({
+  plan,
+  evictBlockers,
+  onEvictChange,
+}: {
+  plan: RenumberPlan;
+  evictBlockers: boolean;
+  onEvictChange: (next: boolean) => void;
+}) {
   const t = useTranslations("import");
 
   return (
@@ -50,6 +58,34 @@ export function RenumberStep({ plan }: { plan: RenumberPlan }) {
           </div>
         ))}
       </div>
+
+      {plan.blockers.length > 0 && (
+        <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">
+          <p>
+            {t("reBlockers", {
+              count: plan.blockers.length,
+              examples: plan.blockers
+                .slice(0, 5)
+                .map((b) => `#${b.currentNumber} ${b.name}`)
+                .join(", "),
+            })}
+          </p>
+          <label className="mt-2 flex items-start gap-2">
+            <input
+              type="checkbox"
+              checked={evictBlockers}
+              onChange={(e) => onEvictChange(e.target.checked)}
+              className="mt-0.5"
+            />
+            <span>
+              {t("reEvict", {
+                from: plan.blockers[0]?.proposedNumber ?? 0,
+                to: plan.blockers[plan.blockers.length - 1]?.proposedNumber ?? 0,
+              })}
+            </span>
+          </label>
+        </div>
+      )}
 
       {plan.untouched.length > 0 && (
         <p className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-300">

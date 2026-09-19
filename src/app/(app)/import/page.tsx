@@ -77,6 +77,7 @@ export default function ImportPage() {
   const [renumberMode, setRenumberMode] = useState(false);
   const [renumberPlan, setRenumberPlan] = useState<RenumberPlan | null>(null);
   const [renumberDone, setRenumberDone] = useState<number | null>(null);
+  const [evictBlockers, setEvictBlockers] = useState(false);
   const [actions, setActions] = useState<Record<number, RowAction>>({});
 
   const [saveTemplate, setSaveTemplate] = useState(false);
@@ -182,6 +183,7 @@ export default function ImportPage() {
           fieldMap,
           categoryMap,
           apply,
+          evictBlockers,
         }),
       });
       const data = await res.json();
@@ -361,6 +363,7 @@ export default function ImportPage() {
     setActions({});
     setRenumberPlan(null);
     setRenumberDone(null);
+    setEvictBlockers(false);
     setResult(null);
     setBatchId(null);
     setProgress(null);
@@ -598,7 +601,16 @@ export default function ImportPage() {
 
       {step === "renumber" && renumberPlan && (
         <div className="mt-4">
-          <RenumberStep plan={renumberPlan} />
+          <RenumberStep
+            plan={renumberPlan}
+            evictBlockers={evictBlockers}
+            onEvictChange={(next) => {
+              setEvictBlockers(next);
+              // Re-plan immediately: ticking this removes conflicts, and the
+              // preview must show that before anything is applied.
+              void goToRenumber(false);
+            }}
+          />
           {renumberDone !== null ? (
             <div className="mt-4 rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
               {t("reDone", { count: renumberDone })}

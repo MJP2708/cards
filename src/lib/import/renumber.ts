@@ -60,6 +60,12 @@ export type RenumberPlan = {
    * listed so that is visible before anything is applied.
    */
   untouched: { id: string; name: string; currentNumber: number }[];
+  /**
+   * Cards the file never mentions that are sitting on a number the file wants.
+   * Nothing can be renumbered onto their numbers while they hold them, so either
+   * they move to the end of the sequence or those rows stay conflicted.
+   */
+  blockers: { id: string; name: string; currentNumber: number; proposedNumber: number }[];
 };
 
 function parseSuppliedNumber(raw: string): number | null {
@@ -74,6 +80,12 @@ export type RenumberInput = {
   rows: RawRow[];
   fieldMap: FieldMap;
   categoryMap: Record<string, string>;
+  /**
+   * Move cards the file doesn't mention off numbers the file needs, onto fresh
+   * numbers past the end. Off by default: it renumbers cards the user did not
+   * ask about, which is only reasonable once they have seen which ones.
+   */
+  evictBlockers?: boolean;
 };
 
 /** Works out what renumbering would do. Writes nothing. */
@@ -257,11 +269,41 @@ export async function planRenumber(
   // terminates because each pass can only turn renumbers into conflicts.
   const holderByNumber = new Map(existing.map((card) => [card.lookupNumber, card]));
 
+  // Before deciding conflicts, optionally clear the blockers out of the way.
+  // A card the file never mentions, parked on a number the file needs, is the
+  // usual reason a whole run of rows cannot be applied — and its current number
+  // is arbitrary anyway, so moving it to the end costs nothing real.
+  const wantedNumbers = new Set(
+    planned.filter((r) => r.status === "renumber" && r.lookupNumber !== null).map((r) => r.lookupNumber!)
+  );
+  const claimedIds = new Set(planned.filter((r) => r.card).map((r) => r.card!.id));
+
+  const highestInPlay = Math.max(
+    0,
+    ...existing.map((c) => c.lookupNumber),
+    ...[...wantedNumbers]
+  );
+  let nextFree = highestInPlay + 1;
+
+  const blockers = existing
+    .filter((card) => !claimedIds.has(card.id) && wantedNumbers.has(card.lookupNumber))
+    .map((card) => ({
+      id: card.id,
+      name: card.name,
+      currentNumber: card.lookupNumber,
+      proposedNumber: nextFree++,
+    }));
+
+  const evicting = input.evictBlockers === true;
+  const evictedIds = new Set(evicting ? blockers.map((b) => b.id) : []);
+
   let resolved: RenumberRow[] = planned;
   for (;;) {
-    const moving = new Set(
-      resolved.filter((r) => r.status === "renumber" && r.card).map((r) => r.card!.id)
-    );
+    const moving = new Set([
+      ...resolved.filter((r) => r.status === "renumber" && r.card).map((r) => r.card!.id),
+      // An evicted blocker vacates its number too, so it counts as moving.
+      ...evictedIds,
+    ]);
     let changed = false;
 
     resolved = resolved.map((row) => {
@@ -297,10 +339,11 @@ export async function planRenumber(
       conflict: resolved.filter((r) => r.status === "conflict").length,
     },
     untouched,
+    blockers,
   };
 }
 
-export type RenumberResult = { renumbered: number; highestNumber: number };
+export type RenumberResult = { renumbered: number; evicted: number; highestNumber: number };
 
 /**
  * Applies a plan.
@@ -315,18 +358,20 @@ export type RenumberResult = { renumbered: number; highestNumber: number };
 export async function applyRenumber(
   db: StoreDb,
   storeId: string,
-  assignments: { cardId: string; lookupNumber: number }[]
+  assignments: { cardId: string; lookupNumber: number }[],
+  evictions: { cardId: string; lookupNumber: number }[] = []
 ): Promise<RenumberResult> {
-  if (assignments.length === 0) return { renumbered: 0, highestNumber: 0 };
+  const all = [...evictions, ...assignments];
+  if (all.length === 0) return { renumbered: 0, evicted: 0, highestNumber: 0 };
 
   await db.$transaction([
-    ...assignments.map((assignment, index) =>
+    ...all.map((assignment, index) =>
       db.card.update({
         where: { id: assignment.cardId },
         data: { lookupNumber: -(index + 1) },
       })
     ),
-    ...assignments.map((assignment) =>
+    ...all.map((assignment) =>
       db.card.update({
         where: { id: assignment.cardId },
         data: { lookupNumber: assignment.lookupNumber },
@@ -336,8 +381,8 @@ export async function applyRenumber(
 
   // Keep the allocator ahead of whatever the sheet just assigned, so the next
   // card added by hand does not land on a number now in use.
-  const highestNumber = Math.max(...assignments.map((a) => a.lookupNumber));
+  const highestNumber = Math.max(...all.map((a) => a.lookupNumber));
   await reserveLookupNumberAtLeast(db, storeId, highestNumber);
 
-  return { renumbered: assignments.length, highestNumber };
+  return { renumbered: assignments.length, evicted: evictions.length, highestNumber };
 }

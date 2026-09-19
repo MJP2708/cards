@@ -366,6 +366,51 @@ async function main() {
       (await db.card.findFirst({ where: { name: "Stays Put" } }))?.lookupNumber === 9
   );
 
+  // ── 7. Evicting a blocker ────────────────────────────────────────────────
+  section("7. a card the file never mentions, sitting on a needed number");
+
+  await db.card.deleteMany({});
+  await db.card.createMany({
+    data: [
+      { storeId: store.id, lookupNumber: 1, category: "NBA", name: "In The File", series: "Set A", costBasis: 1, askingPrice: 1 },
+      { storeId: store.id, lookupNumber: 2, category: "NBA", name: "Not In File", series: "Set B", costBasis: 1, askingPrice: 1 },
+    ],
+  });
+
+  const input = {
+    headers: HEADERS,
+    rows: sheet([[2, "In The File", "Set A"]]),
+    fieldMap: FIELD_MAP,
+    categoryMap: CATEGORY_MAP,
+  };
+
+  const without = await planRenumber(db, categories, input);
+  check("without eviction it is a conflict", without.summary.conflict === 1, JSON.stringify(without.summary));
+  check("and the blocker is identified with somewhere to go", without.blockers.length === 1 && without.blockers[0].proposedNumber === 3,
+    JSON.stringify(without.blockers));
+
+  const withEviction = await planRenumber(db, categories, { ...input, evictBlockers: true });
+  check("ticking eviction clears the conflict", withEviction.summary.conflict === 0 && withEviction.summary.renumber === 1,
+    JSON.stringify(withEviction.summary));
+
+  await applyRenumber(
+    db,
+    store.id,
+    withEviction.rows
+      .filter((r) => r.status === "renumber" && r.card && r.lookupNumber !== null)
+      .map((r) => ({ cardId: r.card!.id, lookupNumber: r.lookupNumber! })),
+    withEviction.blockers.map((b) => ({ cardId: b.id, lookupNumber: b.proposedNumber }))
+  );
+  const evicted = await db.card.findMany({ orderBy: { lookupNumber: "asc" } });
+  check(
+    "the file's card took #2 and the blocker moved to the end",
+    evicted.map((c) => `${c.name}=${c.lookupNumber}`).join(" ") === "In The File=2 Not In File=3",
+    evicted.map((c) => `${c.name}=${c.lookupNumber}`).join(" ")
+  );
+  check("no duplicates and nothing parked negative",
+    new Set(evicted.map((c) => c.lookupNumber)).size === evicted.length &&
+      evicted.every((c) => c.lookupNumber > 0));
+
   console.log(`\n${failures === 0 ? "All checks passed." : `${failures} check(s) FAILED.`}`);
   process.exitCode = failures === 0 ? 0 : 1;
 }

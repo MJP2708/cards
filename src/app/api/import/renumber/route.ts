@@ -15,6 +15,8 @@ const bodySchema = z.object({
    * physical sleeves, so it never happens as a side effect of looking.
    */
   apply: z.boolean().optional(),
+  /** Move cards the file doesn't mention off numbers it needs. */
+  evictBlockers: z.boolean().optional(),
 });
 
 export async function POST(request: Request) {
@@ -37,6 +39,9 @@ export async function POST(request: Request) {
     .filter((row) => row.status === "renumber" && row.card && row.lookupNumber !== null)
     .map((row) => ({ cardId: row.card!.id, lookupNumber: row.lookupNumber! }));
 
-  const applied = await applyRenumber(gate.db, gate.user.storeId, assignments);
+  const evictions = parsed.data.evictBlockers
+    ? plan.blockers.map((b) => ({ cardId: b.id, lookupNumber: b.proposedNumber }))
+    : [];
+  const applied = await applyRenumber(gate.db, gate.user.storeId, assignments, evictions);
   return NextResponse.json({ plan, applied });
 }

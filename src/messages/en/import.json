@@ -120,5 +120,7 @@
   "reApply": "Apply renumbering",
   "reApplying": "Renumbering…",
   "reDone": "{count} cards renumbered to match your file.",
-  "reStatusConflict": "Number already taken"
+  "reStatusConflict": "Number already taken",
+  "reBlockers": "{count} cards aren't in this file but are sitting on numbers the file needs, which blocks those rows: {examples}",
+  "reEvict": "Move them to the end of the sequence (#{from}–#{to}) so the file's numbering can apply"
 }
