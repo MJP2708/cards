@@ -16,8 +16,30 @@ export async function POST(request: Request) {
 
   switch (action) {
     case "delete": {
-      const result = await gate.db.card.deleteMany({ where: { id: { in: ids } } });
-      return NextResponse.json({ count: result.count });
+      // Not a bare deleteMany: price comps and snapshots both RESTRICT, so that
+      // throws on any card carrying them, and it would happily remove a card
+      // with recorded sales — which the single-card route refuses outright.
+      const salesByCard = await gate.db.sale.groupBy({
+        by: ["cardId"],
+        where: { cardId: { in: ids } },
+        _count: { _all: true },
+      });
+      const blocked = new Set(salesByCard.map((row) => row.cardId));
+      const deletable = ids.filter((id) => !blocked.has(id));
+
+      if (deletable.length > 0) {
+        await gate.db.$transaction([
+          gate.db.priceComp.deleteMany({ where: { cardId: { in: deletable } } }),
+          gate.db.priceSnapshot.deleteMany({ where: { cardId: { in: deletable } } }),
+          gate.db.card.deleteMany({ where: { id: { in: deletable } } }),
+        ]);
+      }
+
+      return NextResponse.json({
+        count: deletable.length,
+        // Surfaced rather than silently dropped: the caller asked for these.
+        blocked: blocked.size,
+      });
     }
     case "markPacked":
     case "markUnpacked": {

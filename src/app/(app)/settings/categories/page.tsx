@@ -8,6 +8,7 @@ import { useUiStore } from "@/store/uiStore";
 import { useOnboardingStore } from "@/store/onboardingStore";
 import { CategoryIcon } from "@/components/icons/CategoryIcon";
 import { CategoryRenameList } from "@/components/settings/CategoryRenameList";
+import { MassDeletePanel } from "@/components/settings/MassDeletePanel";
 import { HEADER_FONTS, ICON_SETS, type FieldDef, type ThemeTokens } from "@/lib/fieldSchema";
 
 type DraftField = FieldDef & { optionsText: string };
@@ -349,6 +350,10 @@ export default function SettingsPage() {
           </button>
         </form>
       </section>
+
+      {/* Last on the page, deliberately: you have to scroll past everything else
+          to reach the only action that cannot be undone. */}
+      <MassDeletePanel />
     </div>
   );
 }
