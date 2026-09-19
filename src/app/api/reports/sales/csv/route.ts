@@ -20,6 +20,10 @@ export async function GET(request: Request) {
     report.lines.map((l) => ({
       Date: l.timestamp.toISOString(),
       Category: l.category,
+      // Named "Lookup #" rather than "Card #": in a card shop's spreadsheet
+      // "Card #" means the number printed on the card, which is a different
+      // column. Keeping them distinct is what lets an export re-import cleanly.
+      "Lookup #": l.lookupNumber ?? "",
       Card: l.cardName,
       "Series/Set": l.series,
       "Sold Price": l.soldPrice,

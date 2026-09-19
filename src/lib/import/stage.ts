@@ -41,6 +41,13 @@ export type FieldChange = { field: string; from: string; to: string };
 
 export type StagedRow = {
   rowNumber: number;
+  /**
+   * The quick-reference number this row will end up with. A number the sheet
+   * supplied, or null meaning "allocate one at commit". Kept beside the card
+   * rather than inside it because it is assigned by the store, not described by
+   * the spreadsheet row.
+   */
+  lookupNumber: number | null;
   match: MatchStatus;
   /** Warnings worth a human's eye. Non-empty does not block import. */
   issues: string[];
@@ -151,8 +158,15 @@ export async function stageRows(
       askingPrice: true,
       costBasis: true,
       status: true,
+      lookupNumber: true,
     },
   });
+
+  // Supplied lookup numbers are checked against what this store already uses, and
+  // against each other. Silently overwriting either would make one number mean two
+  // cards — the failure this whole numbering scheme exists to prevent.
+  const usedNumbers = new Map(existingCards.map((card) => [card.lookupNumber, card.name]));
+  const numbersInThisFile = new Map<number, number>();
 
   const exactIndex = new Map<string, (typeof existingCards)[number]>();
   const looseIndex = new Map<string, (typeof existingCards)[number][]>();
@@ -177,6 +191,7 @@ export async function stageRows(
 
     const failed = (reason: string): StagedRow => ({
       rowNumber: row.rowNumber,
+      lookupNumber: null,
       match: "failed",
       issues: [...issues, reason],
       changes: [],
@@ -232,6 +247,30 @@ export async function stageRows(
     const { status, issue: statusIssue } = normalizeStatus(read("status"));
     if (statusIssue) issues.push(statusIssue);
 
+    // A sheet may carry the vendor's own numbering from a paper scheme set up
+    // beforehand. Those are preserved; anything else is allocated at commit.
+    let lookupNumber: number | null = null;
+    const rawLookup = read("lookupNumber");
+    if (rawLookup) {
+      const parsedLookup = parseNumber(rawLookup);
+      if (parsedLookup === null || !Number.isInteger(parsedLookup) || parsedLookup < 1) {
+        issues.push(`Could not read Lookup # "${rawLookup}" — a number will be assigned instead.`);
+      } else {
+        lookupNumber = parsedLookup;
+        const clashingCard = usedNumbers.get(parsedLookup);
+        const clashingRow = numbersInThisFile.get(parsedLookup);
+        if (clashingCard !== undefined) {
+          issues.push(
+            `Lookup #${parsedLookup} is already used by "${clashingCard}" in this store. Importing this row as-is would make one number mean two cards.`
+          );
+        } else if (clashingRow !== undefined) {
+          issues.push(`Lookup #${parsedLookup} is also used by row ${clashingRow} of this same file.`);
+        } else {
+          numbersInThisFile.set(parsedLookup, row.rowNumber);
+        }
+      }
+    }
+
     // Attributes come from the category's own field schema, so a custom category
     // added later picks up its columns without a code change.
     const attributes: Record<string, string> = {};
@@ -276,6 +315,7 @@ export async function stageRows(
     if (duplicateOfRow !== undefined) {
       return {
         rowNumber: row.rowNumber,
+        lookupNumber,
         match: "possible",
         issues: [
           ...issues,
@@ -320,6 +360,7 @@ export async function stageRows(
 
       return {
         rowNumber: row.rowNumber,
+        lookupNumber,
         match: changes.length === 0 ? "exact_unchanged" : "exact_changed",
         issues,
         changes,
@@ -335,6 +376,7 @@ export async function stageRows(
       const difference = describeDifference(card, near);
       return {
         rowNumber: row.rowNumber,
+        lookupNumber,
         match: "possible",
         issues: [
           ...issues,
@@ -358,6 +400,7 @@ export async function stageRows(
 
     return {
       rowNumber: row.rowNumber,
+      lookupNumber,
       match: "new",
       issues,
       changes: [],

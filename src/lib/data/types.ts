@@ -1,5 +1,13 @@
 export type CardDTO = {
   id: string;
+  /**
+   * Store-assigned quick-reference number ("card 47"), not the number printed on
+   * the card — that is `cardNumber`.
+   *
+   * Nullable only because an offline-created card has not reached the server yet
+   * and so has not been allocated one. Every stored card has a number.
+   */
+  lookupNumber: number | null;
   category: string;
   name: string;
   series: string;

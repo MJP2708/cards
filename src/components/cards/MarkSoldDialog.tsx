@@ -13,6 +13,7 @@ import { InlineError } from "@/components/ui/InlineError";
 import { Price } from "@/components/ui/Price";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
+import { LookupBadge } from "@/components/cards/LookupBadge";
 
 export function MarkSoldDialog({ card, onClose }: { card: CardDTO; onClose: () => void }) {
   const t = useTranslations("dialogs");
@@ -58,9 +59,13 @@ export function MarkSoldDialog({ card, onClose }: { card: CardDTO; onClose: () =
       setJustSold(true);
       const saleId = (result as { id?: string }).id;
       if (saleId) {
-        toast(t("soldToast", { name: card.name, price: Number(soldPrice).toLocaleString() }), {
-          action: { label: t("undo"), onClick: () => undoSale(saleId) },
-        });
+        toast(
+          t("soldToast", {
+            name: card.lookupNumber !== null ? `#${card.lookupNumber} ${card.name}` : card.name,
+            price: Number(soldPrice).toLocaleString(),
+          }),
+          { action: { label: t("undo"), onClick: () => undoSale(saleId) } }
+        );
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : t("saleFailed"));
@@ -87,7 +92,10 @@ export function MarkSoldDialog({ card, onClose }: { card: CardDTO; onClose: () =
           </motion.button>
         ) : (
           <motion.div key="form" exit={{ opacity: 0 }}>
-            <h2 id="mark-sold-title" className="mb-1 text-lg font-semibold">
+            {/* The number leads: the staff member is confirming the card the
+                customer just asked for by number, so it is the first thing to check. */}
+            <h2 id="mark-sold-title" className="mb-1 flex flex-wrap items-center gap-2 text-lg font-semibold">
+              <LookupBadge lookupNumber={card.lookupNumber} />
               {card.name}
             </h2>
             {error && <InlineError message={error} className="mb-3" />}

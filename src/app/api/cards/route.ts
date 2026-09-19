@@ -6,6 +6,7 @@ import { getCategoryByKey } from "@/lib/categories";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
 import { requireStore } from "@/lib/auth/guards";
 import { verifyOneCard } from "@/lib/verification/verify";
+import { allocateLookupNumber } from "@/lib/lookupNumber";
 
 const SORTABLE_FIELDS = new Set([
   "name",
@@ -86,11 +87,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: { attributes: attrErrors } }, { status: 400 });
   }
 
+  // A replayed offline card that already landed must return its existing row
+  // untouched. Checking first rather than relying on upsert alone keeps the
+  // allocator out of the retry path: a dropped response would otherwise burn a
+  // lookup number on every retry, and while gaps are legal they should come from
+  // deletions, not from network flakiness.
+  const alreadyStored = parsed.data.id
+    ? await gate.db.card.findFirst({ where: { id: parsed.data.id } })
+    : null;
+  if (alreadyStored) return NextResponse.json(alreadyStored, { status: 201 });
+
   const data = {
     ...parsed.data,
     storeId: gate.user.storeId,
     category: category.key,
     attributes: parsed.data.attributes as Prisma.InputJsonValue,
+    lookupNumber: await allocateLookupNumber(gate.db, gate.user.storeId),
   };
 
   // Offline-created cards replay with their client-generated id so it never needs

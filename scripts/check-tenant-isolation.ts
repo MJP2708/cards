@@ -29,9 +29,11 @@ async function main() {
   const alpha = await prisma.store.create({ data: { name: "Alpha Cards" } });
   const beta = await prisma.store.create({ data: { name: "Beta Cards" } });
 
-  const mk = (storeId: string, name: string) =>
+  // Each store numbers its own stock from 1, which is itself part of the
+  // isolation contract: the unique index is [storeId, lookupNumber], not global.
+  const mk = (storeId: string, name: string, lookupNumber = 1) =>
     prisma.card.create({
-      data: { storeId, category: "NBA", name, series: "Prizm", costBasis: 1, askingPrice: 2 },
+      data: { storeId, lookupNumber, category: "NBA", name, series: "Prizm", costBasis: 1, askingPrice: 2 },
     });
 
   const alphaCard = await mk(alpha.id, "Alpha LeBron");
@@ -79,7 +81,7 @@ async function main() {
     args: unknown
   ) => Promise<{ storeId: string }>;
   const created = await createUnchecked({
-    data: { category: "NBA", name: "Auto-stamped", series: "S", costBasis: 1, askingPrice: 2 },
+    data: { category: "NBA", lookupNumber: 2, name: "Auto-stamped", series: "S", costBasis: 1, askingPrice: 2 },
   });
   check("create stamps the caller's storeId", created.storeId === alpha.id);
 

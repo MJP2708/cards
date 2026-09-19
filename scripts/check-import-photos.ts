@@ -98,14 +98,14 @@ async function main() {
 
   await db.card.createMany({
     data: [
-      { ...base, name: "Luka Doncic" },
-      { ...base, name: "LeBron James" },
+      { ...base, lookupNumber: 1, name: "Luka Doncic" },
+      { ...base, lookupNumber: 2, name: "LeBron James" },
       // Already has a photo the seller took — must never be replaced.
-      { ...base, name: "Stephen Curry", photoFront: "https://seller.example/mine.jpg", photoIsStock: false },
+      { ...base, lookupNumber: 3, name: "Stephen Curry", photoFront: "https://seller.example/mine.jpg", photoIsStock: false },
       // Carries an older auto-filled photo, which may be refreshed.
-      { ...base, name: "Anthony Edwards", photoFront: "https://img.example.test/old.jpg", photoIsStock: true },
+      { ...base, lookupNumber: 4, name: "Anthony Edwards", photoFront: "https://img.example.test/old.jpg", photoIsStock: true },
       // No marketplace listing exists for this one.
-      { ...base, name: "Ghost Card" },
+      { ...base, lookupNumber: 5, name: "Ghost Card" },
     ],
   });
 
@@ -183,7 +183,7 @@ async function main() {
     data: { storeId: store.id, fileName: "b3.xlsx", rowCount: 1, importedCount: 1, status: "enriching" },
   });
   await db.card.create({
-    data: { ...base, importBatchId: batch3.id, name: "Kevin Durant" },
+    data: { ...base, importBatchId: batch3.id, lookupNumber: 8, name: "Kevin Durant" },
   });
   await fetchPhotosNextChunk(db, store.id, batch3.id, 5);
 
@@ -219,8 +219,8 @@ async function main() {
   });
   await db.card.createMany({
     data: [
-      { ...base, importBatchId: batch2.id, name: "Jayson Tatum" },
-      { ...base, importBatchId: batch2.id, name: "Devin Booker" },
+      { ...base, importBatchId: batch2.id, lookupNumber: 6, name: "Jayson Tatum" },
+      { ...base, importBatchId: batch2.id, lookupNumber: 7, name: "Devin Booker" },
     ],
   });
 

@@ -12,6 +12,8 @@ const commitSchema = z.object({
     .array(
       z.object({
         card: cardInputSchema,
+        /** Supplied by the spreadsheet; omitted means allocate the next one. */
+        lookupNumber: z.number().int().min(1).optional().nullable(),
         /**
          * new    — create a separate card
          * update — set quantity/price/status on the matched card

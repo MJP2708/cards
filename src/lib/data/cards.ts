@@ -110,6 +110,10 @@ export function useCreateCard() {
         const id = createId();
         const optimisticCard: CardDTO = {
           id,
+          // Allocated by the server, which this card has not reached. The UI shows
+          // "pending" rather than inventing a number that a second offline device
+          // could invent too.
+          lookupNumber: null,
           category: input.category,
           name: input.name,
           series: input.series,

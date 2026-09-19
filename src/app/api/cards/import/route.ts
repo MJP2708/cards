@@ -6,6 +6,7 @@ import { getCategoryByKey } from "@/lib/categories";
 import { z } from "zod";
 import { readJsonBody, invalidJsonResponse } from "@/lib/api";
 import { requireOwner } from "@/lib/auth/guards";
+import { allocateLookupNumbers } from "@/lib/lookupNumber";
 
 const importSchema = z.object({
   category: z.string().min(1),
@@ -36,11 +37,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: { rows: errors } }, { status: 400 });
   }
 
+  // One block for the whole batch, in row order, same as the worksheet importer.
+  const numbers = await allocateLookupNumbers(gate.db, gate.user.storeId, parsed.data.rows.length);
+
   const result = await gate.db.card.createMany({
-    data: parsed.data.rows.map((row) => ({
+    data: parsed.data.rows.map((row, index) => ({
       ...row,
       storeId: gate.user.storeId,
       category: category.key,
+      lookupNumber: numbers[index],
       attributes: row.attributes as Prisma.InputJsonValue | undefined,
     })),
   });

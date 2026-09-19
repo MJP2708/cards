@@ -58,5 +58,10 @@
   "swipeToSelect": "Select",
   "stockPhotoBadge": "Reference",
   "stockPhotoAlt": "{name} — reference photo of another copy, not this card",
-  "stockPhotoWarning": "Reference photo from a marketplace listing — this is another copy of the same card, so don't judge condition or centring from it."
+  "stockPhotoWarning": "Reference photo from a marketplace listing — this is another copy of the same card, so don't judge condition or centring from it.",
+  "lookupPendingHelp": "This card was added offline and hasn't synced yet, so it has no lookup number.",
+  "lookupJumpLabel": "Go to card #",
+  "lookupJumpPlaceholder": "# card no.",
+  "lookupNotFound": "No card #{number} in this store.",
+  "exportCsv": "Export CSV"
 }

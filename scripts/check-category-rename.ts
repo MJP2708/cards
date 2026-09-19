@@ -44,11 +44,11 @@ async function main() {
   // referencing the NBA key the way the real app writes them.
   await dbA.card.createMany({
     data: [
-      { storeId: storeA.id, category: "NBA", name: "Luka Doncic", series: "Prizm", costBasis: 1, askingPrice: 2 },
-      { storeId: storeA.id, category: "NBA", name: "LeBron James", series: "Prizm", costBasis: 1, askingPrice: 2 },
+      { storeId: storeA.id, lookupNumber: 1, category: "NBA", name: "Luka Doncic", series: "Prizm", costBasis: 1, askingPrice: 2 },
+      { storeId: storeA.id, lookupNumber: 2, category: "NBA", name: "LeBron James", series: "Prizm", costBasis: 1, askingPrice: 2 },
       // Written with different casing, as an older import or a hand edit might.
-      { storeId: storeA.id, category: "nba", name: "Stephen Curry", series: "Chrome", costBasis: 1, askingPrice: 2 },
-      { storeId: storeA.id, category: "Football", name: "Erling Haaland", series: "Chrome", costBasis: 1, askingPrice: 2 },
+      { storeId: storeA.id, lookupNumber: 3, category: "nba", name: "Stephen Curry", series: "Chrome", costBasis: 1, askingPrice: 2 },
+      { storeId: storeA.id, lookupNumber: 4, category: "Football", name: "Erling Haaland", series: "Chrome", costBasis: 1, askingPrice: 2 },
     ],
   });
   await dbA.filterPreset.create({
@@ -66,7 +66,7 @@ async function main() {
 
   // Store B gets an NBA card too — renaming A's category must not touch it.
   await dbB.card.create({
-    data: { storeId: storeB.id, category: "NBA", name: "Other Store Card", series: "Prizm", costBasis: 1, askingPrice: 2 },
+    data: { storeId: storeB.id, lookupNumber: 1, category: "NBA", name: "Other Store Card", series: "Prizm", costBasis: 1, askingPrice: 2 },
   });
 
   const nba = await dbA.category.findFirst({ where: { key: "NBA" } });

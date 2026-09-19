@@ -104,5 +104,7 @@
   "catCreatePrefix": "Need a new category? Create it in Settings first, then re-upload:",
   "photosProgress": "Fetching reference photos {done} of {total}…",
   "photosFound": "{found} reference photos found, {without} without a match.",
-  "photosNone": "No reference photos were found for this batch."
+  "photosNone": "No reference photos were found for this batch.",
+  "colLookup": "Lookup #",
+  "lookupAuto": "auto"
 }

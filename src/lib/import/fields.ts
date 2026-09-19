@@ -58,6 +58,36 @@ export const CORE_IMPORT_FIELDS: ImportField[] = [
     unmappedDefault: "Left blank",
   },
   {
+    key: "lookupNumber",
+    label: "Lookup # (store reference)",
+    required: false,
+    kind: "core",
+    /**
+     * Deliberately does NOT claim "card #", "card number" or "number". In a card
+     * shop's spreadsheet those overwhelmingly mean the number the manufacturer
+     * printed on the card, which is `cardNumber` — a different field entirely.
+     * Quietly taking them would write a vendor's shelf numbering into the
+     * printed-number column and corrupt both. A sheet that really does use
+     * "Card #" for its own numbering is re-pointed on the mapping screen, which
+     * is exactly what that screen is for.
+     */
+    aliases: [
+      "lookup",
+      "lookup no",
+      "lookup number",
+      "ref",
+      "ref no",
+      "reference",
+      "reference number",
+      "tag",
+      "tag number",
+      "booth number",
+      "table number",
+      "display number",
+    ],
+    unmappedDefault: "Assigned automatically, continuing this store's sequence",
+  },
+  {
     key: "cardNumber",
     label: "Card Number",
     required: false,

@@ -121,7 +121,9 @@ export function SalesReportPdf({
                   {line.photoFront && <Image src={line.photoFront} style={s.thumb} />}
                 </View>
                 <Text style={s.colCategory}>{line.category}</Text>
-                <Text style={s.colCard}>{line.cardName}</Text>
+                <Text style={s.colCard}>
+                  {line.lookupNumber !== null ? `#${line.lookupNumber} — ${line.cardName}` : line.cardName}
+                </Text>
                 <Text style={s.colSeries}>{line.series}</Text>
                 <Text style={s.colPrice}>{money(line.soldPrice)}</Text>
                 <Text style={s.colProfit}>{money(line.profit)}</Text>

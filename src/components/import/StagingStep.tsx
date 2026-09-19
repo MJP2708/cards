@@ -136,6 +136,7 @@ export function StagingStep({
           <thead className="border-b border-border-1 text-xs uppercase text-foreground/50">
             <tr>
               <th className="py-2 pr-3">{t("colRow")}</th>
+              <th className="py-2 pr-3">{t("colLookup")}</th>
               <th className="py-2 pr-3">{t("colStatus")}</th>
               <th className="py-2 pr-3">{t("colName")}</th>
               <th className="py-2 pr-3">{t("colCategory")}</th>
@@ -158,6 +159,15 @@ export function StagingStep({
                   }`}
                 >
                   <td className="py-2 pr-3 text-foreground/50">{row.rowNumber}</td>
+                  <td className="py-2 pr-3 whitespace-nowrap">
+                    {row.lookupNumber !== null ? (
+                      <span className="font-mono text-xs">#{row.lookupNumber}</span>
+                    ) : (
+                      // Allocated at commit, so there is no number to show yet —
+                      // saying "auto" is honest where a guessed number would not be.
+                      <span className="text-xs text-foreground/40">{t("lookupAuto")}</span>
+                    )}
+                  </td>
                   <td className="py-2 pr-3">
                     <span
                       className={`whitespace-nowrap rounded px-1.5 py-0.5 text-xs font-medium ${MATCH_STYLES[row.match]}`}

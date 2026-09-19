@@ -1,6 +1,7 @@
 import { Prisma } from "@/generated/prisma/client";
 import type { StoreDb } from "@/lib/db/scoped";
 import type { CardInput } from "@/lib/validation/card";
+import { allocateLookupNumbers, reserveLookupNumberAtLeast } from "@/lib/lookupNumber";
 
 /**
  * The write half of the importer, kept out of the route handler so it can be
@@ -10,6 +11,11 @@ import type { CardInput } from "@/lib/validation/card";
 
 export type CommitRow = {
   card: CardInput;
+  /**
+   * A number the spreadsheet supplied, when the vendor already numbered their
+   * stock on paper. Absent means "give it the next one".
+   */
+  lookupNumber?: number | null;
   action: "new" | "update" | "merge" | "skip";
   existingId?: string | null;
   needsReview?: boolean;
@@ -47,6 +53,23 @@ export async function commitImport(
     data: { storeId, fileName, rowCount: rows.length, status: "importing" },
   });
 
+  // Numbers the sheet brought with it are kept; the rest are allocated in the
+  // order the rows commit, so a seller reading down their spreadsheet and a
+  // seller reading down the inventory list see the same sequence. Allocating one
+  // block up front takes a single lock for the whole import rather than one per row.
+  const needsNumber = toCreate.filter((row) => !row.lookupNumber);
+  const allocated = await allocateLookupNumbers(db, storeId, needsNumber.length);
+  const numbers = new Map<CommitRow, number>();
+  needsNumber.forEach((row, index) => numbers.set(row, allocated[index]));
+
+  // A supplied number can sit above the counter, so move it past them — otherwise
+  // the next card added by hand would land on one the sheet already used.
+  const highestSupplied = toCreate.reduce(
+    (max, row) => (row.lookupNumber && row.lookupNumber > max ? row.lookupNumber : max),
+    0
+  );
+  await reserveLookupNumberAtLeast(db, storeId, highestSupplied);
+
   try {
     // One transaction: a half-applied import is the outcome that would be genuinely
     // hard to unpick, because the rows that did land look like duplicates on the retry.
@@ -57,6 +80,7 @@ export async function commitImport(
               data: toCreate.map((row) => ({
                 ...row.card,
                 storeId,
+                lookupNumber: row.lookupNumber ?? numbers.get(row)!,
                 attributes: row.card.attributes as Prisma.InputJsonValue | undefined,
                 importBatchId: batch.id,
                 enrichmentStatus: "pending",

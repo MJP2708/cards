@@ -95,13 +95,19 @@ async function main() {
     },
   ];
 
-  for (const card of sampleCards) {
+  // Seeded cards are numbered in listed order, and the store's counter is moved
+  // past them so a card added afterwards continues the sequence.
+  for (const [index, card] of sampleCards.entries()) {
     await prisma.card.upsert({
       where: { storeId_qrCode: { storeId, qrCode: card.qrCode } },
       update: {},
-      create: { ...card, storeId },
+      create: { ...card, storeId, lookupNumber: index + 1 },
     });
   }
+  await prisma.store.update({
+    where: { id: storeId },
+    data: { nextLookupNumber: sampleCards.length + 1 },
+  });
 
   console.log(
     `Seeded ${categories.length} categories and ${sampleCards.length} cards into "${SEED_STORE_NAME}".`

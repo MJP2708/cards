@@ -12,6 +12,7 @@ import { MarkSoldDialog } from "@/components/cards/MarkSoldDialog";
 import { FactSheetPanel } from "@/components/cards/FactSheetPanel";
 import { VerificationPanel } from "@/components/cards/VerificationPanel";
 import { VerificationBadge } from "@/components/cards/VerificationBadge";
+import { LookupBadge } from "@/components/cards/LookupBadge";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { StatusPill } from "@/components/ui/StatusPill";
 import { Button } from "@/components/ui/Button";
@@ -56,7 +57,10 @@ export default function CardDetailPage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-xl font-semibold">{card.name}</h1>
+          <h1 className="flex flex-wrap items-center gap-2 font-display text-xl font-semibold">
+            <LookupBadge lookupNumber={card.lookupNumber} className="text-sm" />
+            {card.name}
+          </h1>
           <div className="mt-1 flex items-center gap-2 text-sm text-foreground/60">
             <span>{category.displayName}</span>
             <StatusPill status={card.status} />

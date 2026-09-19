@@ -34,12 +34,24 @@ model Store {
   importBatches ImportBatch[]
   importMappings ImportMapping[]
   settings      Settings?
+
+  /// Next lookup number to hand out. A monotonic counter rather than
+  /// MAX(lookupNumber)+1, because numbers must never be reused: deleting the
+  /// highest-numbered card would otherwise recycle its number onto a different
+  /// card, and "card 47" would come to mean two things over one store's history.
+  /// Gaps are therefore expected and correct.
+  nextLookupNumber Int @default(1)
 }
 
 model Card {
   id          String    @id @default(cuid())
   storeId     String
   store       Store     @relation(fields: [storeId], references: [id], onDelete: Cascade)
+  /// Store-assigned quick-reference number for calling a card out at the table
+  /// ("how much for 47?"). Unrelated to `cardNumber`, which is the number the
+  /// manufacturer printed on the card itself. Sequential per store, allocated
+  /// from Store.nextLookupNumber, and never reused.
+  lookupNumber Int
   category    String // "NBA", "Football", "Pokemon", "TCG-MTG", "TCG-OnePiece", etc.
   name        String // player name (sports) or card name (Pokemon/TCG) — used for search
   series      String // set/expansion/series name
@@ -106,6 +118,8 @@ model Card {
   priceSnapshots PriceSnapshot[]
 
   @@unique([storeId, qrCode])
+  // Unique per store, not globally: two shops both number their stock from 1.
+  @@unique([storeId, lookupNumber])
   @@index([storeId, category, status])
   // Backs the "show me only flagged cards" filter, which is the whole point of
   // running the audit — after a 500-row import nobody scrolls the full list.

@@ -213,6 +213,7 @@ export default function ImportPage() {
           const action = actions[row.rowNumber] ?? row.suggestedAction;
           return {
             card: row.card,
+            lookupNumber: row.lookupNumber,
             // An unresolved "needs review" row is a skip, not a guess.
             action: action === "undecided" ? ("skip" as const) : action,
             existingId: row.existing?.id ?? null,

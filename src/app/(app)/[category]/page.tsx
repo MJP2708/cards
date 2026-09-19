@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
-import { PackagePlus, Upload, Inbox, SearchX, LayoutGrid, Rows3, Plus, CircleDollarSign, ShieldCheck } from "lucide-react";
+import { PackagePlus, Upload, Inbox, SearchX, LayoutGrid, Rows3, Plus, CircleDollarSign, ShieldCheck, Download } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { useCategories } from "@/hooks/useCategories";
 import { useCards, useVerifyAll } from "@/lib/data/cards";
@@ -24,6 +24,8 @@ import { CategoryIcon } from "@/components/icons/CategoryIcon";
 import { CardThumbnail } from "@/components/cards/CardThumbnail";
 import { CardGrid } from "@/components/cards/CardGrid";
 import { VerificationBadge } from "@/components/cards/VerificationBadge";
+import { LookupBadge } from "@/components/cards/LookupBadge";
+import { LookupJump } from "@/components/cards/LookupJump";
 import { PhotoLightbox } from "@/components/cards/PhotoLightbox";
 import { useUiStore } from "@/store/uiStore";
 import { motionProfileFor } from "@/lib/motionProfiles";
@@ -107,18 +109,21 @@ function InventoryRow({
           leftover width but refuses to grow to fit its content, so long card names
           ellipsize rather than widening the row past the viewport. */}
       <td className="w-full max-w-0 px-3 py-2">
-        <Link
-          href={selectionActive ? "#" : `/${card.category.toLowerCase()}/card/${card.id}`}
-          onClick={(e) => {
-            if (selectionActive) {
-              e.preventDefault();
-              onToggleSelect(card.id);
-            }
-          }}
-          className="tap-compact block truncate font-medium hover:underline"
-        >
-          {card.name}
-        </Link>
+        <span className="flex min-w-0 items-center gap-1.5">
+          <LookupBadge lookupNumber={card.lookupNumber} />
+          <Link
+            href={selectionActive ? "#" : `/${card.category.toLowerCase()}/card/${card.id}`}
+            onClick={(e) => {
+              if (selectionActive) {
+                e.preventDefault();
+                onToggleSelect(card.id);
+              }
+            }}
+            className="tap-compact block truncate font-medium hover:underline"
+          >
+            {card.name}
+          </Link>
+        </span>
         {card.isHot && (
           <Badge tone="danger" className="ml-2">
             {t("hotBadge")}
@@ -252,6 +257,7 @@ export default function CategoryInventoryPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <LookupJump />
             <div className="flex rounded-md border border-border-1 p-0.5">
               <button
                 onClick={() => setListViewMode("table")}
@@ -298,6 +304,13 @@ export default function CategoryInventoryPage() {
                 {t("bulkImport")}
               </button>
             )}
+            <a
+              href={`/api/cards/export${isAll ? "" : `?category=${encodeURIComponent(category?.key ?? "")}`}`}
+              className="hidden items-center gap-1.5 rounded-md border border-border-1 px-3 py-2 text-sm hover:bg-surface-1 sm:flex"
+            >
+              <Download className="h-4 w-4" aria-hidden />
+              {t("exportCsv")}
+            </a>
             <Link
               href={`/${params.category}/new`}
               className="hidden items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-dark sm:flex"

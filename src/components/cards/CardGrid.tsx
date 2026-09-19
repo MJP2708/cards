@@ -8,6 +8,7 @@ import { Price } from "@/components/ui/Price";
 import { Button } from "@/components/ui/Button";
 import { SwipeableRow } from "@/components/cards/SwipeableRow";
 import { VerificationBadge } from "@/components/cards/VerificationBadge";
+import { LookupBadge } from "@/components/cards/LookupBadge";
 import type { CardDTO } from "@/lib/data/types";
 import type { CategoryDTO } from "@/lib/categories";
 
@@ -83,6 +84,7 @@ export function CardGrid({
                     {cardCategory.displayName}
                   </span>
                 )}
+                <LookupBadge lookupNumber={card.lookupNumber} className="self-start" />
                 <Link
                   href={selectionActive ? "#" : `/${card.category.toLowerCase()}/card/${card.id}`}
                   onClick={(e) => {

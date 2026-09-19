@@ -5,6 +5,8 @@ export type SalesReportLine = {
   saleId: string;
   timestamp: Date;
   category: string;
+  /** Store's quick-reference number, so a line reads "#47 — LeBron James". */
+  lookupNumber: number | null;
   cardName: string;
   series: string;
   photoFront: string | null;
@@ -72,6 +74,7 @@ export async function buildSalesReport(db: StoreDb, params: {
       saleId: sale.id,
       timestamp: sale.timestamp,
       category: sale.card.category,
+      lookupNumber: sale.card.lookupNumber,
       cardName: sale.card.name,
       series: sale.card.series,
       photoFront: sale.card.photoFront,
